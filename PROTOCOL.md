@@ -20,7 +20,7 @@ These serve to establish consensus between the flasher and target that they are 
 
 After the target connects to the flasher, the flasher sends the ASCII string "ODIN" (4 byte packet, no NULL termination).
 
-The target replies with the ASCII string "LOKE" (once again a 4 byte packet, no NULL termination)
+The target replies with the ASCII string "LOKE" (once again a 4 byte packet, no NULL termination).
 
 ### Command packets
 
@@ -59,6 +59,8 @@ The target responds to each packet sent by the flasher with an 8 byte long packe
 #### PIT transfer packet
 
 This packet type is used to transfer PIT partition description between flasher and target.
+
+The PIT format itself is documented in `PIT.md`.
 
 ##### Flasher to target
 
