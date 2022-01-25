@@ -11,8 +11,8 @@ This document is not (yet) exhaustive, so please contribute if you find out anyt
 
 ### Base types
 
-* `Integer`: 32 bit, big endian (?), unsigned
-* `Short`: 16 bit, big endian (?), unsigned
+* `Integer`: 32 bit, little endian, unsigned
+* `Short`: 16 bit, little endian, unsigned
 
 ### Magic packets
 

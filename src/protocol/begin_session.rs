@@ -1,24 +1,30 @@
+use super::{OdinCmd, OdinCmdPacket, OdinCmdReply, OdinInt};
 use crate::comms::{Communicator, Result};
 
-use std::io::{Error, ErrorKind};
+const BEGIN_SESSION: u32 = 0x00;
 
-const PING: [u8; 4] = [b'O', b'D', b'I', b'N'];
-const PONG: [u8; 4] = [b'L', b'O', b'K', b'E'];
-
-/// This should be invoked on the `Communicator` before any other command.
+/// Begins a session with a target.
 pub fn begin_session(c: &mut Box<dyn Communicator>) -> Result<()> {
-    c.send(&PING)?;
-    let resp = c.recv_exact(PONG.len())?;
-    if resp != PONG {
-        // TODO: Think about error types
-        return Err(Error::new(
-            ErrorKind::InvalidData,
-            format!(
-                "Session init failed due to invalid data from target ({:?})",
-                resp
-            ),
-        ));
+    // The intial command is always just BeginSession
+    let p = OdinCmdPacket {
+        kind: OdinCmd::SessionStart,
+        arg1: OdinInt::from(BEGIN_SESSION),
+        arg2: None,
+    };
+
+    p.send(c)?;
+
+    // We expect an 8-byte response from the target
+    let resp = OdinCmdReply::read(c)?;
+    if resp.cmd != OdinCmd::SessionStart {
+        panic!(
+            "Target sent unexpected Odin command in reply: {:?}",
+            resp.cmd
+        );
     }
+    println!("Reply: {:?}", resp);
+
+    // TODO: The second command has strange fields set in the Samsung implementation. Do we need to send a second command?
 
     return Ok(());
 }
