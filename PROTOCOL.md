@@ -67,7 +67,7 @@ The first Integer is always `0x65`. This is followed by an action specifier:
 * `0x00` "Request Flash": Asks the target to repartition itself based on the following PIT file
 * `0x01` "Request dump": Asks the target to transfer the current partition layout in following packets
 * `0x02` "Request part": Tells the target how far the transfer has come. Typically sent from the second packet onwards.
-* `0x03`: "Request end of file transfer": Tell the target that the transfer is over. Typically sent after the expected amount of data has been transferred.
+* `0x03` "Request end of file transfer": Tell the target that the transfer is over. Typically sent after the expected amount of data has been transferred.
 
 Your first PIT packet should always set this to either `0x00` or `0x01`. Subsequent packets to `0x02` or `0x03`.
 

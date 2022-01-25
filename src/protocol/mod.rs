@@ -4,6 +4,8 @@ pub use magic_handshake::*;
 mod begin_session;
 pub use begin_session::*;
 mod resp_packet;
+mod download_pit;
+pub use download_pit::*;
 
 use crate::comms::Result;
 use crate::Communicator;
@@ -36,6 +38,12 @@ impl OdinInt {
 impl From<u32> for OdinInt {
     fn from(u: u32) -> Self {
         return OdinInt { inner: u };
+    }
+}
+
+impl Into<u32> for OdinInt {
+    fn into(self) -> u32 {
+        return self.inner;
     }
 }
 
