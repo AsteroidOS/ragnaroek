@@ -54,8 +54,10 @@ Not quite sure what this means. It seems to count up in subsequent entries, but 
 Not quite sure here either. This contains C-style flags which can be ORed together.
 
 * `0x01` "Write": Don't know.
-* `0x02` "STL": Don't know.
-* `0x04` "BML": Don't know.
+* `0x02` "STL": Most likely "Sector Transition Layer"
+* `0x04` "BML": Most likely "Block Management Layer"
+
+STL and BML are device interfaces for block devices, the BML interface is used for the rootfs.
 
 ### UpdateAttributes (Integer)
 
