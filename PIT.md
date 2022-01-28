@@ -12,7 +12,7 @@ These are similar to the ones used in the Odin protocol:
 
 * `Integer`: 32 bit, little endian, unsigned
 * `Short`: 16 bit, little endian, unsigned
-* `String`: `NULL`-terminated, C-style string. In ASCII or at least a compatible encoding.
+* `String`: `NULL`-terminated, C-style string. In ASCII or at least a compatible encoding. All currently known strings are at most 32 bytes total.
 
 ## Magic
 
@@ -93,15 +93,21 @@ It seems that this is always 0 in newer PIT files. However, it may still mean so
 It'd probably be helpful to analyze the PIT of a Galaxy S or similarly ancient device to clear this up.
 
 ### PartitionName (String, 32 Bytes)
+
 Name of the Partition. Was All Uppercase with optional number on end in our case
 Examples:
- - MODULE
- - STEADY
- - WD-RESERVED
+
+* MODULE
+* STEADY
+* WD-RESERVED
 
 ### FlashFileName (String, 32 Bytes)
+
 Name of the File. Sometimes there is a `-` Displayed. Maybe when no data is there or it is litarally a `-` Examples:
-- sboot.img
-- loader.img
+
+* sboot.img
+* loader.img
+
 ### FotaFileName (String, 32 Bytes)
-This name was always empty in our case, even when Fota Flag is set
+
+This name was always empty in our case, even when Fota Flag is set.

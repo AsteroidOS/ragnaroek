@@ -27,7 +27,7 @@ fn main() {
     println!("Begin session OK");
 
     let pit = protocol::download_pit(&mut conn);
-    println!("PIT donwload OK");
+    println!("PIT download OK");
     println!("PIT data: {:?}", pit);
 
     /*
