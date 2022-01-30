@@ -20,7 +20,7 @@ impl Pit {
     pub fn deserialize(data: &[u8]) -> Result<Pit> {
         // Check whether magic is valid
         if data[0..=3] != PIT_MAGIC {
-            panic!("Invalid PIT magic: {:?}!", &data[0..=3]);
+            return Err(PitError::InvalidPit([data[0], data[1], data[2], data[3]]).into());
         }
         let data = &data[4..];
 
@@ -68,8 +68,9 @@ fn read_string_and_advance(data: &[u8]) -> Result<String> {
     // C String constructor fails on seeing a NULL-byte; filter them out
     let data: Vec<u8> = data.iter().take_while(|x| **x != 0).map(|x| *x).collect();
     let c_str = CString::new(data).unwrap();
-    if c_str.clone().into_bytes_with_nul().len() > PIT_STRING_MAX_LEN {
-        panic!("Failed to parse PIT string: too long");
+    let c_str_len = c_str.clone().into_bytes_with_nul().len();
+    if c_str_len > PIT_STRING_MAX_LEN {
+        return Err(PitError::PitStringTooLong(c_str_len).into());
     }
     let s = c_str.into_string().unwrap();
     return Ok(s);
@@ -80,7 +81,7 @@ fn read_entry(data: &[u8]) -> Result<(PitEntry, &[u8])> {
     let pit_type = match pit_type.into() {
         0x00 => PitType::Other,
         0x01 => PitType::Modem,
-        _ => panic!("Invalid PIT partitition entry binary type"),
+        _ => return Err(PitError::InvalidBinaryType(pit_type).into()),
     };
 
     let (pit_device_type, data) = read_odin_int_and_advance(data)?;
@@ -89,7 +90,7 @@ fn read_entry(data: &[u8]) -> Result<(PitEntry, &[u8])> {
         0x01 => PitDeviceType::File,
         0x02 => PitDeviceType::Mmc,
         0x03 => PitDeviceType::All,
-        _ => panic!("Invalid PIT partition entry device type"),
+        _ => return Err(PitError::InvalidDeviceType(pit_device_type).into()),
     };
 
     let (pit_id, data) = read_odin_int_and_advance(data)?;

@@ -14,21 +14,23 @@ const PIT_FLAG_END: u32 = 0x03;
 /// Must be called after a session has been established.
 /// TODO: Enforce this constraint via type system
 pub fn download_pit(c: &mut Box<dyn Communicator>) -> Result<Pit> {
-	let total_len: OdinInt = initiate_pit_download(c)?;
-	let total_len : u32 = total_len.into();
-	let total_len: usize = total_len.try_into().expect("Not trying to run this on a 16-bit platform, are you?");
-	let mut have_len: usize = 0;
-	let mut data: Vec<u8> = Vec::new();
-	data.reserve(total_len);
+    let total_len: OdinInt = initiate_pit_download(c)?;
+    let total_len: u32 = total_len.into();
+    let total_len: usize = total_len
+        .try_into()
+        .expect("Not trying to run this on a 16-bit platform, are you?");
+    let mut have_len: usize = 0;
+    let mut data: Vec<u8> = Vec::new();
+    data.reserve(total_len);
 
-	while have_len < total_len {
-		data.extend_from_slice(&fetch_pit_chunk(c, have_len, total_len)?);
-		have_len = data.len();
-	}
+    while have_len < total_len {
+        data.extend_from_slice(&fetch_pit_chunk(c, have_len, total_len)?);
+        have_len = data.len();
+    }
 
-	end_pit_download(c)?;
+    end_pit_download(c)?;
 
-	return Ok(Pit::deserialize(&data)?);
+    return Ok(Pit::deserialize(&data)?);
 }
 
 /// Sends the initial PIT download request packet and checks for an appropriate target response.
@@ -42,28 +44,30 @@ fn initiate_pit_download(c: &mut Box<dyn Communicator>) -> Result<OdinInt> {
     };
     p.send(c)?;
 
-	// We expect an 8-byte response from the target
+    // We expect an 8-byte response from the target
     let resp = OdinCmdReply::read(c)?;
     if resp.cmd != OdinCmd::TransferPIT {
-        panic!(
-            "Target sent unexpected Odin command in reply: {:?}",
-            resp.cmd
+        return Err(
+            ProtocolError::InvalidTargetReplyOdinCmd(OdinCmd::TransferPIT, resp.cmd).into(),
         );
     }
-    println!("Reply: {:?}", resp);
-	return Ok(resp.arg);
+    return Ok(resp.arg);
 }
 
 /// Puts in a request for the next chunk of PIT data with the target and fetches it.
 /// Returns an error or the read data.
 /// Only call as long as have_len < total_len (AKA the transfer isn't done yet).
-fn fetch_pit_chunk(c: &mut Box<dyn Communicator>, have_len: usize, total_len: usize) -> Result<Vec<u8>> {
-	// Calculate which chunk index to use
-	let chunk_idx: usize = have_len / PIT_CHUNK_SIZE;
-	let chunk_idx: u32 = chunk_idx.try_into().unwrap();
-	let chunk_idx: OdinInt = chunk_idx.into();
+fn fetch_pit_chunk(
+    c: &mut Box<dyn Communicator>,
+    have_len: usize,
+    total_len: usize,
+) -> Result<Vec<u8>> {
+    // Calculate which chunk index to use
+    let chunk_idx: usize = have_len / PIT_CHUNK_SIZE;
+    let chunk_idx: u32 = chunk_idx.try_into().unwrap();
+    let chunk_idx: OdinInt = chunk_idx.into();
 
-	// Send request
+    // Send request
     let p = OdinCmdPacket {
         kind: OdinCmd::TransferPIT,
         arg1: OdinInt::from(PIT_FLAG_CHUNK),
@@ -71,9 +75,9 @@ fn fetch_pit_chunk(c: &mut Box<dyn Communicator>, have_len: usize, total_len: us
     };
     p.send(c)?;
 
-	// Read response
-	let left = core::cmp::min(total_len - have_len, PIT_CHUNK_SIZE);
-return c.recv_exact(left);
+    // Read response
+    let left = core::cmp::min(total_len - have_len, PIT_CHUNK_SIZE);
+    return c.recv_exact(left).map_err(|e| e.into());
 }
 
 /// Tells the target that the PIT transfer is over and checks for an appropriate target response.
@@ -86,15 +90,13 @@ fn end_pit_download(c: &mut Box<dyn Communicator>) -> Result<()> {
     };
     p.send(c)?;
 
-	// We expect an 8-byte response from the target
+    // We expect an 8-byte response from the target
     let resp = OdinCmdReply::read(c)?;
     if resp.cmd != OdinCmd::TransferPIT {
-        panic!(
-            "Target sent unexpected Odin command in reply: {:?}",
-            resp.cmd
+        return Err(
+            ProtocolError::InvalidTargetReplyOdinCmd(OdinCmd::TransferPIT, resp.cmd).into(),
         );
     }
-    println!("Reply: {:?}", resp);
 
-	return Ok(());
+    return Ok(());
 }

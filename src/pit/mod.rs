@@ -4,6 +4,8 @@
 use crate::protocol::OdinInt;
 
 mod deserialize;
+mod error;
+pub use error::PitError;
 
 const PIT_MAGIC: [u8; 4] = [0x76, 0x98, 0x34, 0x12];
 const PIT_ENTRY_SIZE: usize = 132;

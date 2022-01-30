@@ -3,9 +3,11 @@ mod magic_handshake;
 pub use magic_handshake::*;
 mod begin_session;
 pub use begin_session::*;
-mod resp_packet;
 mod download_pit;
+mod resp_packet;
 pub use download_pit::*;
+mod error;
+pub use error::ProtocolError;
 
 use crate::comms::Result;
 use crate::Communicator;
@@ -15,20 +17,20 @@ use crate::Communicator;
 /// Seems like all Odin command packets are exactly 1024 bytes long
 const CMD_PACKET_LEN: usize = 1024;
 
-/// The integral type used in the Odin protocol.
+/// The integral type used in the Odin protocol and the PIT format.
 #[derive(Copy, Clone, Debug, PartialEq)]
-struct OdinInt {
+pub struct OdinInt {
     inner: u32,
 }
 
 impl OdinInt {
     /// Convert to the wire representation.
-    fn to_wire(&self) -> [u8; 4] {
+    pub fn to_wire(&self) -> [u8; 4] {
         return u32::to_le_bytes(self.inner);
     }
 
     /// Construct from the wire representation.
-    fn from_wire(data: [u8; 4]) -> OdinInt {
+    pub fn from_wire(data: [u8; 4]) -> OdinInt {
         return OdinInt {
             inner: u32::from_le_bytes(data),
         };
@@ -59,20 +61,20 @@ impl From<OdinCmd> for OdinInt {
 
 /// All known command IDs that can be sent to the target as the first Integer in a packet.
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum OdinCmd {
+pub enum OdinCmd {
     SessionStart,
     TransferPIT,
     Flash,
 }
 
 impl TryFrom<OdinInt> for OdinCmd {
-    type Error = &'static str;
+    type Error = ProtocolError;
     fn try_from(int: OdinInt) -> std::result::Result<Self, Self::Error> {
         match int {
             OdinInt { inner: 0x64 } => Ok(OdinCmd::SessionStart),
             OdinInt { inner: 0x65 } => Ok(OdinCmd::TransferPIT),
             OdinInt { inner: 0x66 } => Ok(OdinCmd::Flash),
-            _ => Err("OdinInt codes for an unknown OdinCmd"),
+            _ => Err(ProtocolError::InvalidOdinCmd(int)),
         }
     }
 }

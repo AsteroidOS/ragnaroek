@@ -6,10 +6,12 @@
 //! that allows you to easily build your own tools.
 
 mod comms;
-mod protocol;
+mod error;
+pub use error::{Error, Result};
 mod pit;
+mod protocol;
 
-use comms::{Communicator, Result};
+use comms::Communicator;
 
 /// All the Odin .ini files I could find only ever mention this port
 const WIRELESS_PORT: u16 = 13579;
@@ -29,13 +31,4 @@ fn main() {
     let pit = protocol::download_pit(&mut conn);
     println!("PIT download OK");
     println!("PIT data: {:?}", pit);
-
-    /*
-    let mut conn: Box<dyn Communicator> = Box::new(comms::usb::Connection::establish().unwrap());
-    println!("Target connected!");
-    protocol::begin_session(&mut conn).unwrap();
-    println!("Handshake OK");
-    protocol::end_session(&mut conn, true).unwrap();
-    println!("End session OK")
-    */
 }

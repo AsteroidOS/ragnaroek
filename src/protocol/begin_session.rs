@@ -1,6 +1,7 @@
 use super::*;
+use crate::Result;
 
-use crate::comms::{Communicator, Result};
+use crate::comms::Communicator;
 
 const BEGIN_SESSION: u32 = 0x00;
 
@@ -18,12 +19,10 @@ pub fn begin_session(c: &mut Box<dyn Communicator>) -> Result<()> {
     // We expect an 8-byte response from the target
     let resp = OdinCmdReply::read(c)?;
     if resp.cmd != OdinCmd::SessionStart {
-        panic!(
-            "Target sent unexpected Odin command in reply: {:?}",
-            resp.cmd
+        return Err(
+            ProtocolError::InvalidTargetReplyOdinCmd(OdinCmd::SessionStart, resp.cmd).into(),
         );
     }
-    println!("Reply: {:?}", resp);
 
     // TODO: The second command has strange fields set in the Samsung implementation. Do we need to send a second command?
 
