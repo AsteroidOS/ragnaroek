@@ -31,4 +31,7 @@ fn main() {
     let pit = protocol::download_pit(&mut conn);
     println!("PIT download OK");
     println!("PIT data: {:?}", pit);
+
+    protocol::end_session(&mut conn, false).unwrap();
+    println!("End session OK");
 }

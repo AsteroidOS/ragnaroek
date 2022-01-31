@@ -1,0 +1,43 @@
+use super::*;
+use crate::comms::Communicator;
+use crate::Result;
+
+const END_SESSION: u32 = 0x00;
+const REBOOT: u32 = 0x01;
+
+/// Ends the targets session, with an optional reboot to the OS.
+pub fn end_session(c: &mut Box<dyn Communicator>, reboot: bool) -> Result<()> {
+    // Heimdall always first sends a session end, and only then a reboot.
+    // Not sure if needed or we could send a reboot request immediately.
+    let p = OdinCmdPacket {
+        kind: OdinCmd::SessionEnd,
+        arg1: OdinInt::from(END_SESSION),
+        arg2: None,
+    };
+    p.send(c)?;
+
+    // We expect an 8-byte response from the target
+    let resp = OdinCmdReply::read(c)?;
+    if resp.cmd != OdinCmd::SessionEnd {
+        return Err(ProtocolError::InvalidTargetReplyOdinCmd(OdinCmd::SessionEnd, resp.cmd).into());
+    }
+
+    if reboot {
+        // Send a reboot
+        let p = OdinCmdPacket {
+            kind: OdinCmd::SessionEnd,
+            arg1: OdinInt::from(REBOOT),
+            arg2: None,
+        };
+        p.send(c)?;
+
+        let resp = OdinCmdReply::read(c)?;
+        if resp.cmd != OdinCmd::SessionEnd {
+            return Err(
+                ProtocolError::InvalidTargetReplyOdinCmd(OdinCmd::SessionEnd, resp.cmd).into(),
+            );
+        }
+    }
+
+    return Ok(());
+}

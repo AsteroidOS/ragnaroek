@@ -3,6 +3,8 @@ mod magic_handshake;
 pub use magic_handshake::*;
 mod begin_session;
 pub use begin_session::*;
+mod end_session;
+pub use end_session::*;
 mod download_pit;
 mod resp_packet;
 pub use download_pit::*;
@@ -55,6 +57,7 @@ impl From<OdinCmd> for OdinInt {
             OdinCmd::SessionStart => OdinInt::from(0x64),
             OdinCmd::TransferPIT => OdinInt::from(0x65),
             OdinCmd::Flash => OdinInt::from(0x66),
+            OdinCmd::SessionEnd => OdinInt::from(0x67),
         }
     }
 }
@@ -65,6 +68,7 @@ pub enum OdinCmd {
     SessionStart,
     TransferPIT,
     Flash,
+    SessionEnd,
 }
 
 impl TryFrom<OdinInt> for OdinCmd {
@@ -74,6 +78,7 @@ impl TryFrom<OdinInt> for OdinCmd {
             OdinInt { inner: 0x64 } => Ok(OdinCmd::SessionStart),
             OdinInt { inner: 0x65 } => Ok(OdinCmd::TransferPIT),
             OdinInt { inner: 0x66 } => Ok(OdinCmd::Flash),
+            OdinInt { inner: 0x67 } => Ok(OdinCmd::SessionEnd),
             _ => Err(ProtocolError::InvalidOdinCmd(int)),
         }
     }
