@@ -1,20 +1,19 @@
-/// This module implements the actual protocol details.
-mod magic_handshake;
-pub use magic_handshake::*;
+//! This module is the core of the actual protocol implementation.
+
 mod begin_session;
-pub use begin_session::*;
-mod end_session;
-pub use end_session::*;
 mod download_pit;
-mod resp_packet;
-pub use download_pit::*;
+mod end_session;
 mod error;
+mod magic_handshake;
+
+pub use begin_session::begin_session;
+pub use download_pit::download_pit;
+pub use end_session::end_session;
 pub use error::ProtocolError;
+pub use magic_handshake::magic_handshake;
 
 use crate::comms::Result;
 use crate::Communicator;
-
-// TODO: Implement common interface for all commands here
 
 /// Seems like all Odin command packets are exactly 1024 bytes long
 const CMD_PACKET_LEN: usize = 1024;
