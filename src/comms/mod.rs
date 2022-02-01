@@ -1,6 +1,7 @@
 /// This module implements low-level communication with the target device.
 /// It does not actually understand protocol details, but only provides dumb bidirectional pipes.
 pub mod net;
+pub mod usb;
 
 pub use std::io::Result;
 
