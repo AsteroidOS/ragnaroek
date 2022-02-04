@@ -29,6 +29,22 @@ pub struct PitEntry {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Pit {
     entries: Vec<PitEntry>,
+    // For the iterator
+    idx: usize,
+}
+
+impl Iterator for Pit {
+    type Item = PitEntry;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.idx > (self.entries.len() - 1) {
+            return None;
+        }
+
+        let next = self.entries[self.idx].clone();
+        self.idx = self.idx + 1;
+        return Some(next);
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
