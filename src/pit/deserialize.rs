@@ -41,7 +41,7 @@ impl Pit {
             data = &data[PIT_ENTRY_SIZE..];
         }
 
-        return Ok(Pit { entries });
+        return Ok(Pit { entries, idx: 0 });
     }
 }
 
