@@ -70,10 +70,9 @@ The first Integer is always `0x65`. This is followed by an action specifier:
 * `0x01` "Request dump": Asks the target to transfer the current partition layout in following packets
 * `0x02` "Request part": Tells the target how far the transfer has come. Typically sent from the second packet onwards.
 * `0x03` "Request end of file transfer": Tell the target that the transfer is over. Typically sent after the expected amount of data has been transferred.
+* `0x05` "Change packet size": According to <https://i.blackhat.com/USA-20/Wednesday/us-20-Chao-Breaking-Samsungs-Root-Of-Trust-Exploiting-Samsung-Secure-Boot.pdf>, this can be used to tell the target the size of data packets to expect. Needs further research/confirmation.
 
 Your first PIT packet should always set this to either `0x00` or `0x01`. Subsequent packets to `0x02` or `0x03`.
-
-*TODO: In the dumps, these start at the 6th rather than the 5th byte. Investigate why that is.*
 
 If the flag `0x02` has been set in the second Integer, the third Integer must be set to the index of the next 500-byte PIT chunk to be transferred. For example, if you've been dumping and already have received 2000 bytes of PIT data, you'd set this to `0x04`.
 
