@@ -4,12 +4,14 @@ mod begin_session;
 mod download_pit;
 mod end_session;
 mod error;
+mod flash;
 mod magic_handshake;
 
 pub use begin_session::begin_session;
 pub use download_pit::download_pit;
 pub use end_session::end_session;
 pub use error::ProtocolError;
+pub use flash::flash;
 pub use magic_handshake::magic_handshake;
 
 use crate::comms::Result;
@@ -53,6 +55,7 @@ impl Into<u32> for OdinInt {
 impl From<OdinCmd> for OdinInt {
     fn from(cmd: OdinCmd) -> Self {
         match cmd {
+            OdinCmd::ChunkTransferOk => OdinInt::from(0x00),
             OdinCmd::SessionStart => OdinInt::from(0x64),
             OdinCmd::TransferPIT => OdinInt::from(0x65),
             OdinCmd::Flash => OdinInt::from(0x66),
@@ -64,6 +67,11 @@ impl From<OdinCmd> for OdinInt {
 /// All known command IDs that can be sent to the target as the first Integer in a packet.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum OdinCmd {
+    /// Not a real Odin command, but something sent by the target
+    /// during the flashing process in the location where a Odin command
+    /// would usually go.
+    /// Including it as a variant here makes the code simpler.
+    ChunkTransferOk,
     SessionStart,
     TransferPIT,
     Flash,
@@ -74,6 +82,7 @@ impl TryFrom<OdinInt> for OdinCmd {
     type Error = ProtocolError;
     fn try_from(int: OdinInt) -> std::result::Result<Self, Self::Error> {
         match int {
+            OdinInt { inner: 0x00 } => Ok(OdinCmd::ChunkTransferOk),
             OdinInt { inner: 0x64 } => Ok(OdinCmd::SessionStart),
             OdinInt { inner: 0x65 } => Ok(OdinCmd::TransferPIT),
             OdinInt { inner: 0x66 } => Ok(OdinCmd::Flash),
