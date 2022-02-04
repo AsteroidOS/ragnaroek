@@ -87,11 +87,36 @@ If the second flasher packet Integer was `0x03`, the reply will look like for `0
 
 * TODO: Investigate how this looks like for `0x00` (a flash command)*
 
-#### Flash packet
+#### Flash (Odin AP package) packet
 
-These packets are used to actually transfer the firmware for a given partition.
+These packets are used to actually transfer the firmware for a given partition. The way this works is quite similar to PIT transfers.
 
 ##### Flasher to target
+
+The first Integer is always `0x66`. This is followed by an action specifier:
+
+* `0x00` "Request flash": Asks the target to await further instructions for receiving and flashing a partition image.
+* `0x01` "Request dump":  Asks the target to start sending partition contents.
+* `0x02` "Request chunk": Asks the device to send the next chunk of data. Not sure whether this is relevant while flashing, or only while dumping.
+* `0x03` "Request end": Signals to the device that the transfer is over.
+
+The first packet should always be either `0x00` or `0x01`. Subsequent packets `0x02` or `0x03`.
+
+After the first packet, a request flash packet seems to be resent by NetOdin.
+
+Afterwards, the real transfer starts. Packets of 1460 bytes are sent until 131072 bytes (exactly 128KB) have been transferred. The 1460 byte packets are probably just because of the 1500 byte MTU.
+
+After the 128KB chunk has been transferred, the target responds with the Integer 0x00, followed by the chunk index (also an Integer). It is currently not known whether this index may ever reference a previously-sent chunk (thus requesting retransmission).
+
+This is repeated with all chunks until the sender has no more data. Then, a Request End packet is sent to the target to signal end of transmission.
+
+What's done if the partition image is not a multiple of 128KB in size needs to be researched.
+
+These notes are also based on observing NetOdin flashing an AP tarball. How to flash individual partitions or other things (such as the modem firmware) still needs to be researched as well.
+
+Also, it's not clear how the AP tarball is transferred (for example, whether it's unpacked at all or just sent verbatim)
+
+#### Target to flasher
 
 The first Integer is always `0x66`.
 
