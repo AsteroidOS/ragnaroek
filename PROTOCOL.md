@@ -95,6 +95,17 @@ These packets are used to actually transfer the firmware for a given partition.
 
 The first Integer is always `0x66`.
 
-* TODO: Continue documenting *
+### End session packet
 
+#### Flasher to target
 
+The first Integer is always `0x67`. This is followed by an action specifier:
+
+* `0x00` "Don't reboot": Asks the target to just terminate the session.
+* `0x01` "Reboot":  Asks the target to terminate the session and reboot to system.
+
+Both Heimdall and Odin always send a packet indicating not to reboot before sending a reboot packet. Mot sure whether this is required or simply a programming quirk.
+
+#### Target to flasher
+
+The target responds to each packet sent by the flasher with an 8 byte long packet. The first Integer is always `0x67`. The second one appears to be always `0x00`, even if the reboot flag (so `0x01`) was sent.
