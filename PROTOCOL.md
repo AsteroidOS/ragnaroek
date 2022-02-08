@@ -1,4 +1,4 @@
-# ODIN Protocol documentation
+# Odin Protocol documentation
 
 This document seeks to briefly describe the Odin protocol.
 
@@ -6,6 +6,28 @@ A lot of this information was pulled from Heimdall and other open source tools,
 but to my knowledge this is the first document that strives to collect this information in a human-readable form.
 
 This document is not (yet) exhaustive, so please contribute if you find out anything yourself. Also, most of this analysis was performed based on NetOdin. Regular USB Odin may differ somewhat.
+
+## Establishing communication
+
+Even though the transfered data seems to be in (mostly) the same format regardless of transport medium, session setup works quite differently:
+
+### NetOdin
+
+After starting Wireless Download AP Mode (usually by some arcane key combo), the target will start trying to connect to the IP address `192.168.1.20` on TCP port `13579`. The target itself seems to always be `192.168.1.1`.
+
+This mode seems to only be available on some Samsung smartwatches.
+
+### Odin (regular/USB)
+
+The target seems to always advertise itself under Samsung's VID (`0x04e8`) and the Galaxy S2's PID (`0x685d`, though there are probably others as well).
+
+With this transport, the annoying part is finding the correct pair of USB endpoints. To do that, walk the 0th config descriptor's interfaces, looking for one that has an alt setting that
+
+1) Has exactly 2 Endpoints
+2) Is of USB class `0x0A` (CDC Data)
+3) Has both an input endpoint and an output endpoint
+
+This endpoint pair is then used for communication via USB bulk transfers.
 
 ## Packet format
 
