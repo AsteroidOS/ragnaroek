@@ -4,28 +4,34 @@ use crate::pit::PitEntry;
 use crate::Communicator;
 
 const FLASH_FLAG_FLASH: u32 = 0x00;
+const FLASH_FLAG_SIZE: u32 = 0x02;
 const FLASH_FLAG_END: u32 = 0x03;
 
 const CHUNK_MAX_SIZE: usize = 131072; // 128KiB
 
 pub fn flash(c: &mut Box<dyn Communicator>, mut data: &[u8]) -> Result<()> {
-    flash_initiate(c)?;
+    let size: u32 = data
+        .len()
+        .try_into()
+        .expect("Cannot flash: Size of file exceeds Odin Intger max value!");
+    flash_initiate(c, size)?;
+
     while data.len() > 0 {
         data = flash_chunk(c, data)?;
     }
-    flash_finish(c)?;
 
+    flash_finish(c)?;
     return Ok(());
 }
 
-pub fn flash_initiate(c: &mut Box<dyn Communicator>) -> Result<()> {
+pub fn flash_initiate(c: &mut Box<dyn Communicator>, size: u32) -> Result<()> {
     // Tell target that we want to flash
-    let p1 = OdinCmdPacket {
+    let p = OdinCmdPacket {
         kind: OdinCmd::Flash,
         arg1: OdinInt::from(FLASH_FLAG_FLASH),
         arg2: None,
     };
-    p1.send(c)?;
+    p.send(c)?;
 
     let resp = OdinCmdReply::read(c)?;
     if resp.cmd != OdinCmd::Flash {
@@ -34,6 +40,23 @@ pub fn flash_initiate(c: &mut Box<dyn Communicator>) -> Result<()> {
             resp.cmd
         );
     }
+
+    // Tell target how much data to expect
+    let p = OdinCmdPacket {
+        kind: OdinCmd::Flash,
+        arg1: OdinInt::from(FLASH_FLAG_SIZE),
+        arg2: Some(OdinInt::from(size)),
+    };
+    p.send(c)?;
+
+    let resp = OdinCmdReply::read(c)?;
+    if resp.cmd != OdinCmd::Flash {
+        panic!(
+            "Target sent unexpected Odin command in reply: {:?}",
+            resp.cmd
+        );
+    }
+
     return Ok(());
 }
 
