@@ -143,12 +143,26 @@ fn define_cli() -> ArgMatches {
         .get_matches();
 }
 
-fn detect(args: &ArgMatches) {
-    let _ = args;
-    // TODO: Respect transport once USB is implemented
+fn get_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>> {
+    let transport = args
+        .value_of("transport")
+        .expect("Transport must have been set! This is probably clap bug.");
+    match transport {
+        "usb" => {
+            let conn = comms::usb::Connection::establish()?;
+            return Ok(Box::new(conn));
+        }
+        "net" => {
+            let mut listener = comms::net::Listener::new(WIRELESS_PORT);
+            let conn = listener.accept()?;
+            return Ok(Box::new(conn));
+        }
+        _ => panic!("Unexpected invalid transport! This should've been caught by clap."),
+    }
+}
 
-    let mut listener = comms::net::Listener::new(WIRELESS_PORT);
-    let mut conn: Box<dyn Communicator> = Box::new(listener.accept().unwrap());
+fn detect(args: &ArgMatches) {
+    let mut conn: Box<dyn Communicator> = get_communicator(args).unwrap();
 
     protocol::magic_handshake(&mut conn).unwrap();
     protocol::begin_session(&mut conn).unwrap();
@@ -157,16 +171,12 @@ fn detect(args: &ArgMatches) {
 }
 
 fn wait_for_device(args: &ArgMatches) {
-    let _ = args;
-    // TODO: Respect transport once USB is implemented
-
-    let mut listener = comms::net::Listener::new(WIRELESS_PORT);
     // This loop is pretty much the only difference to detect
     let mut conn: Box<dyn Communicator>;
     loop {
-        match listener.accept() {
+        match get_communicator(args) {
             Ok(c) => {
-                conn = Box::new(c);
+                conn = c;
                 break;
             }
             Err(_) => {}
@@ -180,11 +190,7 @@ fn wait_for_device(args: &ArgMatches) {
 }
 
 fn print_pit(args: &ArgMatches) {
-    let _ = args;
-    // TODO: Respect transport once USB is implemented
-
-    let mut listener = comms::net::Listener::new(WIRELESS_PORT);
-    let mut conn: Box<dyn Communicator> = Box::new(listener.accept().unwrap());
+    let mut conn: Box<dyn Communicator> = get_communicator(args).unwrap();
 
     protocol::magic_handshake(&mut conn).unwrap();
     protocol::begin_session(&mut conn).unwrap();
@@ -209,17 +215,11 @@ fn parse_pit(args: &ArgMatches) {
 }
 
 fn flash(args: &ArgMatches) {
-    let _ = args;
-    // TODO: Respect transport once USB is implemented
-
-    let mut listener = comms::net::Listener::new(WIRELESS_PORT);
-    let mut conn: Box<dyn Communicator> = Box::new(listener.accept().unwrap());
+    let mut conn: Box<dyn Communicator> = get_communicator(args).unwrap();
 
     protocol::magic_handshake(&mut conn).unwrap();
     protocol::begin_session(&mut conn).unwrap();
-    let mut pit = protocol::download_pit(&mut conn).unwrap();
 
-    // FIXME: This is the wrong type of flash!
     protocol::flash(&mut conn, &[]).unwrap();
 
     let reboot: bool = args.value_of_t_or_exit("reboot");
@@ -227,10 +227,7 @@ fn flash(args: &ArgMatches) {
 }
 
 fn upload_mode(args: &ArgMatches) {
-    // TODO: Respect transport once USB is implemented
-
-    let mut listener = comms::net::Listener::new(WIRELESS_PORT);
-    let mut conn: Box<dyn Communicator> = Box::new(listener.accept().unwrap());
+    let mut conn: Box<dyn Communicator> = get_communicator(args).unwrap();
 
     let start_addr: u32 = args.value_of_t_or_exit("start-address");
     let end_addr: u32 = args.value_of_t_or_exit("end-address");
