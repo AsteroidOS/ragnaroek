@@ -11,7 +11,11 @@ mod pit;
 mod protocol;
 mod upload_mode;
 
-use std::{fs::File, io::Write, path::Path};
+use std::{
+    fs::File,
+    io::{Read, Write},
+    path::Path,
+};
 
 pub use comms::Communicator;
 pub use error::{Error, Result};
@@ -27,6 +31,7 @@ fn main() {
         Some(("detect", sub_args)) => detect(sub_args),
         Some(("wait-for-device", sub_args)) => wait_for_device(sub_args),
         Some(("print-pit", sub_args)) => print_pit(sub_args),
+        Some(("parse-pit", sub_args)) => parse_pit(sub_args),
         Some(("flash", sub_args)) => flash(sub_args),
         Some(("upload-mode", sub_args)) => upload_mode(sub_args),
         _ => panic!("Unexpected missing subcommand! This should've been caught by clap."),
@@ -59,6 +64,16 @@ fn define_cli() -> ArgMatches {
         .about("Print the target's Partition Information Table (PIT).")
         .arg(transport.clone())
         .arg(reboot.clone());
+
+    let parse_pit = App::new("parse-pit")
+        .about("Parse the provided Partition Information Table (PIT). This command does not interact with a target in any way.")
+        .arg(Arg::new("pit-path")
+            .long("pit-path")
+            .short('p')
+            .help("Specify which PIT file to use.")
+            .takes_value(true)
+            .required(true)
+        );
 
     let flash = App::new("flash").about("Flash the given image to the given partition. Remember that flashing certain partitions incorrectly may brick your device!")
     .arg(transport.clone())
@@ -117,7 +132,14 @@ fn define_cli() -> ArgMatches {
     // Putting it all together
     return App::new("ragnaroek")
         .setting(AppSettings::ArgRequiredElseHelp)
-        .subcommands([detect, wait_for_device, print_pit, flash, upload_mode])
+        .subcommands([
+            detect,
+            wait_for_device,
+            print_pit,
+            parse_pit,
+            flash,
+            upload_mode,
+        ])
         .get_matches();
 }
 
@@ -170,6 +192,20 @@ fn print_pit(args: &ArgMatches) {
     println!("{:?}", pit);
     let reboot: bool = args.value_of_t_or_exit("reboot");
     protocol::end_session(&mut conn, reboot).unwrap();
+}
+
+fn parse_pit(args: &ArgMatches) {
+    let path = args
+        .value_of("pit-path")
+        .expect("Required argument not set! This is probably a clap bug.");
+    let path = Path::new(path);
+    let mut f = File::open(path).unwrap();
+
+    let mut pit_data: Vec<u8> = Vec::new();
+    f.read_to_end(&mut pit_data).unwrap();
+
+    let pit = pit::Pit::deserialize(&pit_data).unwrap();
+    println!("{:?}", pit);
 }
 
 fn flash(args: &ArgMatches) {
