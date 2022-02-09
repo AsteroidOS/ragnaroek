@@ -4,6 +4,8 @@
 use crate::protocol::OdinInt;
 
 mod deserialize;
+#[cfg(test)]
+mod deserialize_test;
 mod error;
 pub use error::PitError;
 
