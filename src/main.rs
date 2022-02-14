@@ -229,8 +229,8 @@ fn flash(args: &ArgMatches) {
 fn upload_mode(args: &ArgMatches) {
     let mut conn: Box<dyn Communicator> = get_communicator(args).unwrap();
 
-    let start_addr: u32 = args.value_of_t_or_exit("start-address");
-    let end_addr: u32 = args.value_of_t_or_exit("end-address");
+    let start_addr: u64 = args.value_of_t_or_exit("start-address");
+    let end_addr: u64 = args.value_of_t_or_exit("end-address");
     let data = upload_mode::dump_memory(&mut conn, start_addr, end_addr).unwrap();
 
     // Write to file
@@ -239,6 +239,6 @@ fn upload_mode(args: &ArgMatches) {
         .value_of("filename")
         .expect("Required argument not set! This is probably a clap bug.");
     let path = Path::new(path);
-    let mut f = File::open(path).unwrap();
+    let mut f = File::create(path).unwrap();
     f.write_all(&data).unwrap();
 }
