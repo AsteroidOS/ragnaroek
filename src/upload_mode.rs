@@ -4,13 +4,17 @@ use crate::{Error, Result};
 
 const PREAMBLE: &[u8] = &[b'P', b'r', b'E', b'a', b'M', b'b', b'L', b'e', b'\0'];
 const DATAXFER: &[u8] = &[b'D', b'a', b'T', b'a', b'X', b'f', b'E', b'r', b'\0'];
+const ACKNOWLEDGMENT: &[u8] = &[
+    b'A', b'c', b'K', b'n', b'O', b'w', b'L', b'e', b'D', b'g', b'M', b'e', b'N', b't', b'\0',
+];
+
 const PACKET_LEN: usize = 1024;
 
 /// Dump target memory in upload mode.
 pub fn dump_memory(
     c: &mut Box<dyn Communicator>,
-    start_addr: u32,
-    end_addr: u32,
+    start_addr: u64,
+    end_addr: u64,
 ) -> Result<Vec<u8>> {
     initiate(c, start_addr, end_addr)?;
     send_padded_packet(c, DATAXFER)?; // This tells the target to actually start the transfer
@@ -38,11 +42,18 @@ fn send_padded_packet(c: &mut Box<dyn Communicator>, data: &[u8]) -> Result<()> 
 }
 
 /// Tell the target how much memory we want to dump.
-fn initiate(c: &mut Box<dyn Communicator>, start_addr: u32, end_addr: u32) -> Result<()> {
+fn initiate(c: &mut Box<dyn Communicator>, start_addr: u64, end_addr: u64) -> Result<()> {
     send_padded_packet(c, PREAMBLE)?;
-    let start_addr: [u8; 4] = u32::to_le_bytes(start_addr);
+
+    match c.recv_exact(ACKNOWLEDGMENT.len()) {
+        Err(e) => return Err(Error::TransferError(TransferError::IoError(e))),
+        Ok(data) => println!("{:?}\n", data),
+    }
+
+    let start_addr: [u8; 8] = u64::to_le_bytes(start_addr);
     send_padded_packet(c, &start_addr)?;
-    let end_addr: [u8; 4] = u32::to_le_bytes(end_addr);
+    let end_addr: [u8; 8] = u64::to_le_bytes(end_addr);
     send_padded_packet(c, &end_addr)?;
+
     return Ok(());
 }
