@@ -24,6 +24,8 @@ use clap::{App, AppSettings, Arg, ArgMatches};
 
 /// All the Odin .ini files I could find only ever mention this port
 const WIRELESS_PORT: u16 = 13579;
+/// All the targets implementing wireless mode seem to use this IP
+const WIRELESS_TARGET_IP: &str = "192.168.49.1";
 
 fn main() {
     let args = define_cli();
@@ -43,8 +45,7 @@ fn define_cli() -> ArgMatches {
     let transport = Arg::new("transport")
         .long("transport")
         .short('t')
-        .help("Choose how to communicate with the target. USB doesn't work yet.")
-        // TODO: Add USB
+        .help("Choose how to communicate with the target. USB is even more experimental than everything else about ragnaroek.")
         .possible_values(["net", "usb"])
         .default_value("net");
     let reboot = Arg::new("reboot")
@@ -143,7 +144,7 @@ fn define_cli() -> ArgMatches {
         .get_matches();
 }
 
-fn get_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>> {
+fn get_download_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>> {
     let transport = args
         .value_of("transport")
         .expect("Transport must have been set! This is probably clap bug.");
@@ -153,7 +154,7 @@ fn get_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>> {
             return Ok(Box::new(conn));
         }
         "net" => {
-            let mut listener = comms::net::Listener::new(WIRELESS_PORT);
+            let mut listener = comms::net_bind::Listener::new(WIRELESS_PORT);
             let conn = listener.accept()?;
             return Ok(Box::new(conn));
         }
@@ -162,19 +163,19 @@ fn get_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>> {
 }
 
 fn detect(args: &ArgMatches) {
-    let mut conn: Box<dyn Communicator> = get_communicator(args).unwrap();
+    let mut conn: Box<dyn Communicator> = get_download_communicator(args).unwrap();
 
-    protocol::magic_handshake(&mut conn).unwrap();
-    protocol::begin_session(&mut conn).unwrap();
+    download_protocol::magic_handshake(&mut conn).unwrap();
+    download_protocol::begin_session(&mut conn).unwrap();
     let reboot: bool = args.value_of_t_or_exit("reboot");
-    protocol::end_session(&mut conn, reboot).unwrap();
+    download_protocol::end_session(&mut conn, reboot).unwrap();
 }
 
 fn wait_for_device(args: &ArgMatches) {
     // This loop is pretty much the only difference to detect
     let mut conn: Box<dyn Communicator>;
     loop {
-        match get_communicator(args) {
+        match get_download_communicator(args) {
             Ok(c) => {
                 conn = c;
                 break;
@@ -183,21 +184,21 @@ fn wait_for_device(args: &ArgMatches) {
         }
     }
 
-    protocol::magic_handshake(&mut conn).unwrap();
-    protocol::begin_session(&mut conn).unwrap();
+    download_protocol::magic_handshake(&mut conn).unwrap();
+    download_protocol::begin_session(&mut conn).unwrap();
     let reboot: bool = args.value_of_t_or_exit("reboot");
-    protocol::end_session(&mut conn, reboot).unwrap();
+    download_protocol::end_session(&mut conn, reboot).unwrap();
 }
 
 fn print_pit(args: &ArgMatches) {
-    let mut conn: Box<dyn Communicator> = get_communicator(args).unwrap();
+    let mut conn: Box<dyn Communicator> = get_download_communicator(args).unwrap();
 
-    protocol::magic_handshake(&mut conn).unwrap();
-    protocol::begin_session(&mut conn).unwrap();
-    let pit = protocol::download_pit(&mut conn).unwrap();
+    download_protocol::magic_handshake(&mut conn).unwrap();
+    download_protocol::begin_session(&mut conn).unwrap();
+    let pit = download_protocol::download_pit(&mut conn).unwrap();
     println!("{:?}", pit);
     let reboot: bool = args.value_of_t_or_exit("reboot");
-    protocol::end_session(&mut conn, reboot).unwrap();
+    download_protocol::end_session(&mut conn, reboot).unwrap();
 }
 
 fn parse_pit(args: &ArgMatches) {
