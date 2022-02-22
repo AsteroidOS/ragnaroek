@@ -1,6 +1,6 @@
 use std::ffi::CString;
 
-use crate::protocol::OdinInt;
+use crate::download_protocol::OdinInt;
 use crate::Result;
 
 // TODO: DRY

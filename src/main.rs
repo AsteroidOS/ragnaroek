@@ -6,10 +6,10 @@
 //! that allows you to easily build your own tools.
 
 mod comms;
+mod download_protocol;
 mod error;
 mod pit;
-mod protocol;
-mod upload_mode;
+mod upload_protocol;
 
 use std::{
     fs::File,
@@ -101,33 +101,43 @@ fn define_cli() -> ArgMatches {
         .arg(transport.clone())
         .arg(reboot.clone());
 
+    // TODO: Add subcommands for displaying probe table etc.
+    // TODO: Add support for specifying name of probe table memory range to dump
+    // TODO: This is getting pretty hefty. Consider moving out of here.
     let upload_mode = App::new("upload-mode")
         .about(
-            "Receive a memory dump from a device in upload mode.
+            "Interact with a device in upload mode.
              Note that this is not the regular Odin mode!
              The device usually enters this mode after entering a key combo or a kernel panic.",
         )
-        .arg(transport.clone())
-        .arg(Arg::new("filename")
-            .short('f')
-            .long("filename")
-            .required(true)
-            .takes_value(true)
-            .help("The filename of the file where the memory dump should be written to. Required.")
+        .subcommand(App::new("dump")
+            .about("Dump the given memory region to a file.")
+            .arg(transport.clone())
+            .arg(Arg::new("filename")
+                .short('f')
+                .long("filename")
+                .required(true)
+                .takes_value(true)
+                .help("The filename of the file where the memory dump should be written to. Required.")
+            )
+            .arg(Arg::new("start-address")
+                .short('s')
+                .long("start-address")
+                .required(true)
+                .takes_value(true)
+                .help("Memory address the dump should start at (inclusive). Required.")
+            )
+            .arg(Arg::new("end-address")
+                .short('e')
+                .long("end-address")
+                .required(true)
+                .takes_value(true)
+                .help("Memory address the dump should end at (inclusive). Required.")
+            )
         )
-        .arg(Arg::new("start-address")
-            .short('s')
-            .long("start-address")
-            .required(true)
-            .takes_value(true)
-            .help("Memory address the dump should start at (inclusive). Required.")
-        )
-        .arg(Arg::new("end-address")
-            .short('e')
-            .long("end-address")
-            .required(true)
-            .takes_value(true)
-            .help("Memory address the dump should end at (inclusive). Required.")
+        .subcommand(App::new("probe")
+            .about("Dump the probe table to stdout. This is a listing of memory regions and their properties.")
+            .arg(transport.clone())
         );
 
     // Putting it all together
@@ -216,23 +226,51 @@ fn parse_pit(args: &ArgMatches) {
 }
 
 fn flash(args: &ArgMatches) {
-    let mut conn: Box<dyn Communicator> = get_communicator(args).unwrap();
+    let mut conn: Box<dyn Communicator> = get_download_communicator(args).unwrap();
 
-    protocol::magic_handshake(&mut conn).unwrap();
-    protocol::begin_session(&mut conn).unwrap();
+    download_protocol::magic_handshake(&mut conn).unwrap();
+    download_protocol::begin_session(&mut conn).unwrap();
 
-    protocol::flash(&mut conn, &[]).unwrap();
+    download_protocol::flash(&mut conn, &[]).unwrap();
 
     let reboot: bool = args.value_of_t_or_exit("reboot");
-    protocol::end_session(&mut conn, reboot).unwrap();
+    download_protocol::end_session(&mut conn, reboot).unwrap();
+}
+
+fn get_upload_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>> {
+    let transport = args
+        .value_of("transport")
+        .expect("Transport must have been set! This is probably clap bug.");
+    match transport {
+        "usb" => {
+            let conn = comms::usb::Connection::establish()?;
+            return Ok(Box::new(conn));
+        }
+        "net" => {
+            let mut conn = comms::net_connect::Connection::new(WIRELESS_TARGET_IP, WIRELESS_PORT);
+            return Ok(Box::new(conn));
+        }
+        _ => panic!("Unexpected invalid transport! This should've been caught by clap."),
+    }
 }
 
 fn upload_mode(args: &ArgMatches) {
-    let mut conn: Box<dyn Communicator> = get_communicator(args).unwrap();
+    match args.subcommand() {
+        Some(("dump", sub_args)) => upload_mode_dump(sub_args),
+        Some(("probe", sub_args)) => upload_mode_probe(sub_args),
+        _ => panic!("Unexpected missing subcommand! This should've been caught by clap."),
+    }
+}
+
+fn upload_mode_dump(args: &ArgMatches) {
+    let mut conn: Box<dyn Communicator> = get_upload_communicator(args).unwrap();
+    println!("[DEBUG] Target connected!");
+
+    upload_protocol::handshake(&mut conn).unwrap();
 
     let start_addr: u64 = args.value_of_t_or_exit("start-address");
     let end_addr: u64 = args.value_of_t_or_exit("end-address");
-    let data = upload_mode::dump_memory(&mut conn, start_addr, end_addr).unwrap();
+    let data = upload_protocol::dump(&mut conn, start_addr, end_addr).unwrap();
 
     // Write to file
     // TODO: OS strings may be more appropriate here
@@ -242,4 +280,17 @@ fn upload_mode(args: &ArgMatches) {
     let path = Path::new(path);
     let mut f = File::create(path).unwrap();
     f.write_all(&data).unwrap();
+
+    upload_protocol::end_session(&mut conn).unwrap();
+}
+
+fn upload_mode_probe(args: &ArgMatches) {
+    let mut conn: Box<dyn Communicator> = get_upload_communicator(args).unwrap();
+
+    upload_protocol::handshake(&mut conn).unwrap();
+
+    let table = upload_protocol::probe(&mut conn).unwrap();
+    println!("{:?}", table);
+
+    upload_protocol::end_session(&mut conn).unwrap();
 }

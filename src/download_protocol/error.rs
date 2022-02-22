@@ -2,7 +2,7 @@ use super::{OdinCmd, OdinInt};
 
 /// Error type returned when the protocol is violated.
 #[derive(Debug, Clone, PartialEq)]
-pub enum ProtocolError {
+pub enum DownloadProtocolError {
     /// An OdinInt was read which was expected to be a valid OdinCmd identifier, but wasn't
     InvalidOdinCmd(OdinInt),
     /// Target sent an unexpected OdinCmd identifier in a reply

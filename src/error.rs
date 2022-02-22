@@ -1,5 +1,6 @@
+use crate::download_protocol::DownloadProtocolError;
 use crate::pit::PitError;
-use crate::protocol::ProtocolError;
+use crate::upload_protocol::UploadProtocolError;
 
 use core::result;
 use std::io;
@@ -25,8 +26,10 @@ pub type Result<T> = result::Result<T, Error>;
 pub enum TransferError {
     /// Transfer error was caused by an I/O issue.
     IoError(io::Error),
-    /// Transfer error was caused by a protocol violation.
-    ProtocolError(ProtocolError),
+    /// Transfer error was caused by an Odin protocol violation.
+    DownloadProtocolError(DownloadProtocolError),
+    /// Transfer error was caused by an upload mode protocol violation.
+    UploadProtocolError(UploadProtocolError),
 }
 
 impl From<io::Error> for TransferError {
@@ -35,9 +38,15 @@ impl From<io::Error> for TransferError {
     }
 }
 
-impl From<ProtocolError> for TransferError {
-    fn from(e: ProtocolError) -> Self {
-        return TransferError::ProtocolError(e);
+impl From<DownloadProtocolError> for TransferError {
+    fn from(e: DownloadProtocolError) -> Self {
+        return TransferError::DownloadProtocolError(e);
+    }
+}
+
+impl From<UploadProtocolError> for TransferError {
+    fn from(e: UploadProtocolError) -> Self {
+        return TransferError::UploadProtocolError(e);
     }
 }
 
@@ -48,9 +57,16 @@ impl From<io::Error> for Error {
     }
 }
 
-impl From<ProtocolError> for Error {
-    fn from(e: ProtocolError) -> Self {
-        let e = TransferError::ProtocolError(e);
+impl From<DownloadProtocolError> for Error {
+    fn from(e: DownloadProtocolError) -> Self {
+        let e = TransferError::DownloadProtocolError(e);
+        return Error::TransferError(e);
+    }
+}
+
+impl From<UploadProtocolError> for Error {
+    fn from(e: UploadProtocolError) -> Self {
+        let e = TransferError::UploadProtocolError(e);
         return Error::TransferError(e);
     }
 }

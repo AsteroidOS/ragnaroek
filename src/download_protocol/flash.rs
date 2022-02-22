@@ -1,6 +1,5 @@
 use super::*;
 
-use crate::pit::PitEntry;
 use crate::Communicator;
 
 const FLASH_FLAG_FLASH: u32 = 0x00;

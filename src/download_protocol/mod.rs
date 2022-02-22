@@ -10,7 +10,7 @@ mod magic_handshake;
 pub use begin_session::begin_session;
 pub use download_pit::download_pit;
 pub use end_session::end_session;
-pub use error::ProtocolError;
+pub use error::DownloadProtocolError;
 pub use flash::flash;
 pub use magic_handshake::magic_handshake;
 
@@ -79,7 +79,7 @@ pub enum OdinCmd {
 }
 
 impl TryFrom<OdinInt> for OdinCmd {
-    type Error = ProtocolError;
+    type Error = DownloadProtocolError;
     fn try_from(int: OdinInt) -> std::result::Result<Self, Self::Error> {
         match int {
             OdinInt { inner: 0x00 } => Ok(OdinCmd::ChunkTransferOk),
@@ -87,7 +87,7 @@ impl TryFrom<OdinInt> for OdinCmd {
             OdinInt { inner: 0x65 } => Ok(OdinCmd::TransferPIT),
             OdinInt { inner: 0x66 } => Ok(OdinCmd::Flash),
             OdinInt { inner: 0x67 } => Ok(OdinCmd::SessionEnd),
-            _ => Err(ProtocolError::InvalidOdinCmd(int)),
+            _ => Err(DownloadProtocolError::InvalidOdinCmd(int)),
         }
     }
 }

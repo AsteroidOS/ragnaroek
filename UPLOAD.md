@@ -9,13 +9,15 @@ Other (incomplete?) implementations of this mode can be found at:
 * <https://github.com/nitayart/sboot_dump>
 * <https://github.com/bkerler/sboot_dump>
 
-This mode has been somewhat documented in [this blogpost](https://hexdetective.blogspot.com/2017/02/exploiting-android-s-boot-getting.html). However, the details about the probe command were obtained by reading bkerler's implementation.
+This mode has been somewhat documented in [this blogpost](https://hexdetective.blogspot.com/2017/02/exploiting-android-s-boot-getting.html). However, the details about the probe command were obtained by reading bkerler's implementation. All wireless upload-specific information has been obtained by reverse engineering the Gear S2 classic's and Gear S3's firmwares.
 
 ### Initializing the connection
 
-Establish a connection to the target (from what I can tell, this works just like in download mode but without the magic "ODIN" -> "LOKE" handshake or Odin session begin packet, both for USB and Network).
+Connection establishment over USB works in the same way as for USB download mode in terms of finding the correct endpoints.
 
-Then send the C string "PrEaMbLe\0" (note the NULL terminator). Like all commands, the packet needs to be 0-padded to 1024 bytes in size.
+For wireless upload, Samsung for whatever reason decided to reverse the roles of host and target. Rather than the target connecting to port 1359 on the host, instead the host connects to that port on the target (which seems to always have IP 192.168.49.1 on the watches we looked at).
+
+Then the host sends the C string "PrEaMbLe\0" (note the NULL terminator). Like all commands, the packet needs to be 0-padded to 1024 bytes in size.
 
 The target should reply with "AcKnOwLeDgMeNt\0".
 
@@ -26,10 +28,9 @@ Send "PrObE\0" to the target. It will respond with a "probe table" data structur
 ```C
 struct probetable {
  /*
- Name of the device. According to bkerler's implementation, if this starts with a "+",
- the device uses 32-bit addresses and the size of an entry is 28 bytes.
- Otherwise, the device is 64-bit and the size of an entry is 40 bytes. In the 64-bit case,
- the first char is subsequently chopped off from the name.
+ Name of the device.
+ According to bkerler's implementation, if this starts with a +", the device is 32-bit.
+ Otherwise, the device is 64-bit.
 
  TODO: Is this NULL-terminated?
  TODO: Would a separate mode field make more sense?
@@ -66,7 +67,7 @@ struct probetable_entry {
 
 ### Transfering a chunk of memory
 
-Send a packet with the first memory address to be included in the dump as a 32 or 64-bit uint, 0-padded to 1024 bytes.
+Send a packet with the first memory address to be included in the dump as a 32 or 64-bit little-endian uint, 0-padded to 1024 bytes.
 
 Repeat with the last memory address to be included in the dump.
 

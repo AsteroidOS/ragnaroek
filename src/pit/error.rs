@@ -1,4 +1,4 @@
-use crate::protocol::OdinInt;
+use crate::download_protocol::OdinInt;
 
 /// Error type returned when PIT file (de)serialization fails.
 #[derive(Debug, Clone, Copy, PartialEq)]

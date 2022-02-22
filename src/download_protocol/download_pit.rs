@@ -47,9 +47,11 @@ fn initiate_pit_download(c: &mut Box<dyn Communicator>) -> Result<OdinInt> {
     // We expect an 8-byte response from the target
     let resp = OdinCmdReply::read(c)?;
     if resp.cmd != OdinCmd::TransferPIT {
-        return Err(
-            ProtocolError::InvalidTargetReplyOdinCmd(OdinCmd::TransferPIT, resp.cmd).into(),
-        );
+        return Err(DownloadProtocolError::InvalidTargetReplyOdinCmd(
+            OdinCmd::TransferPIT,
+            resp.cmd,
+        )
+        .into());
     }
     return Ok(resp.arg);
 }
@@ -93,9 +95,11 @@ fn end_pit_download(c: &mut Box<dyn Communicator>) -> Result<()> {
     // We expect an 8-byte response from the target
     let resp = OdinCmdReply::read(c)?;
     if resp.cmd != OdinCmd::TransferPIT {
-        return Err(
-            ProtocolError::InvalidTargetReplyOdinCmd(OdinCmd::TransferPIT, resp.cmd).into(),
-        );
+        return Err(DownloadProtocolError::InvalidTargetReplyOdinCmd(
+            OdinCmd::TransferPIT,
+            resp.cmd,
+        )
+        .into());
     }
 
     return Ok(());

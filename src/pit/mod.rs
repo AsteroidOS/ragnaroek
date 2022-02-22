@@ -1,7 +1,7 @@
 //! This module implements deserialization/serialization (TODO)
 //! for the Samsung PIT partition file format.
 
-use crate::protocol::OdinInt;
+use crate::download_protocol::OdinInt;
 
 mod deserialize;
 #[cfg(test)]
