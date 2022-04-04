@@ -28,6 +28,8 @@ const WIRELESS_PORT: u16 = 13579;
 const WIRELESS_TARGET_IP: &str = "192.168.49.1";
 
 fn main() {
+    env_logger::init();
+
     let args = define_cli();
     match args.subcommand() {
         Some(("detect", sub_args)) => detect(sub_args),

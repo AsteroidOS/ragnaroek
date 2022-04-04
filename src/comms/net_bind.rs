@@ -12,6 +12,8 @@ impl Listener {
     pub fn new(port: u16) -> Listener {
         // All currently known devices do not use IPv6
         let l = TcpListener::bind(format!("0.0.0.0:{}", port)).unwrap();
+
+        log::debug!(target: "NET", "Listening");
         return Listener { l };
     }
 
@@ -19,6 +21,8 @@ impl Listener {
     /// Returns a `Connection` once this happens.
     pub fn accept(&mut self) -> IOResult<Connection> {
         let (stream, _) = self.l.accept()?;
+
+        log::debug!(target: "NET", "Accepted");
         return Ok(Connection { s: stream });
     }
 }
@@ -33,6 +37,7 @@ impl Communicator for Connection {
     /// Sends the given data to the device.
     /// Blocks until all data could be sent or an error occurs.
     fn send(&mut self, data: &[u8]) -> IOResult<()> {
+        log::trace!(target: "NET", "Send: {:?}", data);
         return self.s.write_all(data);
     }
 
@@ -40,6 +45,8 @@ impl Communicator for Connection {
         let mut buf = vec![];
         buf.resize(how_much, 0);
         self.s.read_exact(&mut buf)?;
+
+        log::trace!(target: "NET", "Recv: {:?}", buf);
         return Ok(buf);
     }
 }

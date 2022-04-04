@@ -5,12 +5,10 @@ const VALID_PIDS: [u16; 3] = [0x6601, 0x685D, 0x68C3];
 const USB_CLASS_CDC_DATA: u8 = 0x0A;
 
 use rusb::{Device, Direction, GlobalContext, InterfaceDescriptor};
-
 use super::Communicator;
 
 use std::io::Result as IOResult;
 use std::time::Duration;
-
 /// `Connection` implements a USB ODIN mode connection.
 pub struct Connection {
     handle: rusb::DeviceHandle<GlobalContext>,
@@ -45,6 +43,7 @@ impl Connection {
         handle.claim_interface(interface_num).unwrap();
         handle.set_alternate_setting(interface_num, 0).unwrap();
 
+        log::debug!(target: "USB", "Connected");
         return Ok(Connection {
             handle,
             recv_endpoint: input,
@@ -105,6 +104,8 @@ impl Communicator for Connection {
         self.handle
             .write_bulk(self.send_endpoint, data, Duration::from_secs(10))
             .unwrap();
+
+        log::trace!(target: "USB", "Send: {:?}", data);
         return Ok(());
     }
 
@@ -119,6 +120,8 @@ impl Communicator for Connection {
             Ok(read) => buf.resize(read, 0),
             Err(e) => panic!("{}", e),
         }
+
+        log::trace!(target: "USB", "Recv: {:?}", buf);
         return Ok(buf);
     }
 }
