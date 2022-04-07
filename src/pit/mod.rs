@@ -3,6 +3,10 @@
 
 use crate::download_protocol::OdinInt;
 
+use core::fmt;
+
+use tabled::Tabled;
+
 mod deserialize;
 #[cfg(test)]
 mod deserialize_test;
@@ -12,12 +16,14 @@ pub use error::PitError;
 const PIT_MAGIC: [u8; 4] = [0x76, 0x98, 0x34, 0x12];
 const PIT_ENTRY_SIZE: usize = 132;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Tabled)]
 pub struct PitEntry {
     pub pit_type: PitType,
     pub pit_device_type: PitDeviceType,
     pub pit_id: PitIdentifier,
+    #[tabled(display_with = "display_pit_attributes")]
     pub pit_attributes: Vec<PitAttribute>,
+    #[tabled(display_with = "display_pit_update_attributes")]
     pub pit_update_attributes: Vec<PitUpdateAttribute>,
     pub block_size_or_offset: OdinInt,
     pub block_count: OdinInt,
@@ -28,8 +34,30 @@ pub struct PitEntry {
     pub fota_filename: String,
 }
 
+fn display_pit_attributes(attrs: &Vec<PitAttribute>) -> String {
+    let mut s = String::new();
+    for a in attrs {
+        s.push_str(&format!("{}\n", a));
+    }
+    return s;
+}
+
+fn display_pit_update_attributes(attrs: &Vec<PitUpdateAttribute>) -> String {
+    let mut s = String::new();
+    for a in attrs {
+        s.push_str(&format!("{}\n", a));
+    }
+    return s;
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Pit {
+    /// Usually "COM_TAR2"
+    pub gang_name: String,
+    /// Usually the device's model number
+    pub project_name: String,
+    /// Version of the PIT file. Not sure if related to the download mode protocol version.
+    pub proto_version: OdinInt,
     entries: Vec<PitEntry>,
     // For the iterator
     idx: usize,
@@ -60,18 +88,38 @@ impl Pit {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Tabled)]
 pub enum PitType {
     Other = 0x00,
     Modem = 0x01,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+impl fmt::Display for PitType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PitType::Other => write!(f, "Phone/AP"),
+            PitType::Modem => write!(f, "Modem/CP"),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Tabled)]
 pub enum PitDeviceType {
     OneNand = 0x00,
     File = 0x01,
     Mmc = 0x02,
     All = 0x03,
+}
+
+impl fmt::Display for PitDeviceType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PitDeviceType::OneNand => write!(f, "OneNAND"),
+            PitDeviceType::File => write!(f, "File"),
+            PitDeviceType::Mmc => write!(f, "MMC"),
+            PitDeviceType::All => write!(f, "All"),
+        }
+    }
 }
 
 impl Into<OdinInt> for PitDeviceType {
@@ -86,17 +134,36 @@ impl Into<OdinInt> for PitDeviceType {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Tabled)]
 pub enum PitAttribute {
     Write = 0x01,
     Stl = 0x02,
     Bml = 0x04,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+impl fmt::Display for PitAttribute {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PitAttribute::Write => write!(f, "Writable"),
+            PitAttribute::Stl => write!(f, "STL"),
+            PitAttribute::Bml => write!(f, "BML"),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Tabled)]
 pub enum PitUpdateAttribute {
     Fota = 0x01,
     Secure = 0x02,
+}
+
+impl fmt::Display for PitUpdateAttribute {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PitUpdateAttribute::Fota => write!(f, "FOTA"),
+            PitUpdateAttribute::Secure => write!(f, "Secure"),
+        }
+    }
 }
 
 type PitIdentifier = OdinInt;

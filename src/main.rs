@@ -21,6 +21,7 @@ pub use comms::Communicator;
 pub use error::{Error, Result};
 
 use clap::{App, AppSettings, Arg, ArgMatches};
+use tabled::Table;
 
 /// All the Odin .ini files I could find only ever mention this port
 const WIRELESS_PORT: u16 = 13579;
@@ -202,13 +203,22 @@ fn wait_for_device(args: &ArgMatches) {
     download_protocol::end_session(&mut conn, reboot).unwrap();
 }
 
+fn pretty_print_pit(pit: pit::Pit) {
+    println!("Gang: {}", pit.gang_name);
+    println!("Project: {}", pit.project_name);
+    println!("Version: {}", pit.proto_version);
+    println!("Entries:");
+    println!("{}", Table::new(pit).to_string());
+}
+
 fn print_pit(args: &ArgMatches) {
     let mut conn: Box<dyn Communicator> = get_download_communicator(args).unwrap();
 
     download_protocol::magic_handshake(&mut conn).unwrap();
     download_protocol::begin_session(&mut conn).unwrap();
     let pit = download_protocol::download_pit(&mut conn).unwrap();
-    println!("{:?}", pit);
+    pretty_print_pit(pit);
+
     let reboot: bool = args.value_of_t_or_exit("reboot");
     download_protocol::end_session(&mut conn, reboot).unwrap();
 }
@@ -224,7 +234,7 @@ fn parse_pit(args: &ArgMatches) {
     f.read_to_end(&mut pit_data).unwrap();
 
     let pit = pit::Pit::deserialize(&pit_data).unwrap();
-    println!("{:?}", pit);
+    pretty_print_pit(pit);
 }
 
 fn flash(args: &ArgMatches) {

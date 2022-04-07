@@ -24,13 +24,13 @@ impl Pit {
         }
         let data = &data[4..];
 
-        // Read the number of entries
+        // Parse global data
         let (num_entries, data) = read_odin_int_as_usize_and_advance(data)?;
-        // Ignore unknown header entries
-        let (_, data) = read_odin_int_and_advance(data)?;
-        let (_, data) = read_odin_int_and_advance(data)?;
-        let (_, data) = read_odin_int_and_advance(data)?;
-        let (_, mut data) = read_odin_int_and_advance(data)?;
+        let gang_name = read_string_and_advance(&data)?;
+        let data = &data[8..];
+        let project_name = read_string_and_advance(&data)?;
+        let data = &data[8..];
+        let (proto_version, mut data) = read_odin_int_and_advance(&data)?;
 
         // Parse each entry
         let mut entries: Vec<PitEntry> = Vec::new();
@@ -41,7 +41,13 @@ impl Pit {
             data = &data[PIT_ENTRY_SIZE..];
         }
 
-        return Ok(Pit { entries, idx: 0 });
+        return Ok(Pit {
+            gang_name,
+            project_name,
+            proto_version,
+            entries,
+            idx: 0,
+        });
     }
 }
 

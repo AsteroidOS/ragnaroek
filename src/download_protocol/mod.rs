@@ -19,6 +19,9 @@ pub use magic_handshake::magic_handshake;
 use crate::comms::Result;
 use crate::Communicator;
 
+use core::fmt;
+use core::fmt::Display;
+
 /// The integral type used in the Odin protocol and the PIT format.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct OdinInt {
@@ -36,6 +39,12 @@ impl OdinInt {
         return OdinInt {
             inner: u32::from_le_bytes(data),
         };
+    }
+}
+
+impl Display for OdinInt {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.inner)
     }
 }
 
