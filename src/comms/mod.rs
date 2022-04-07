@@ -11,6 +11,9 @@ pub use std::io::Result;
 pub trait Communicator {
     /// Send the entire buffer to the device, blocking until it's sent or an error occurs.
     /// Will retry send if the underlying medium supports it.
+    ///
+    /// Zero-length data handling is implementation-defined. Some implementations may send an empty
+    /// lower-level transfer, while others may do nothing at all.
     fn send(&mut self, data: &[u8]) -> Result<()>;
     /// Receive exactly the specified amount of data from the device.
     /// Blocks until that much data could be collected or an error occurs.

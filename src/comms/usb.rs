@@ -4,8 +4,8 @@ const VALID_PIDS: [u16; 3] = [0x6601, 0x685D, 0x68C3];
 /// USB class that the desired configuration has (USB communications device)
 const USB_CLASS_CDC_DATA: u8 = 0x0A;
 
-use rusb::{Device, Direction, GlobalContext, InterfaceDescriptor};
 use super::Communicator;
+use rusb::{Device, Direction, GlobalContext, InterfaceDescriptor};
 
 use std::io::Result as IOResult;
 use std::time::Duration;

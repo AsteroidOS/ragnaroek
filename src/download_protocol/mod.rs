@@ -1,6 +1,8 @@
 //! This module is the core of the actual protocol implementation.
 
 mod begin_session;
+mod cmd_packet;
+use cmd_packet::*;
 mod download_pit;
 mod end_session;
 mod error;
@@ -16,9 +18,6 @@ pub use magic_handshake::magic_handshake;
 
 use crate::comms::Result;
 use crate::Communicator;
-
-/// Seems like all Odin command packets are exactly 1024 bytes long
-const CMD_PACKET_LEN: usize = 1024;
 
 /// The integral type used in the Odin protocol and the PIT format.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -49,6 +48,14 @@ impl From<u32> for OdinInt {
 impl Into<u32> for OdinInt {
     fn into(self) -> u32 {
         return self.inner;
+    }
+}
+
+impl From<bool> for OdinInt {
+    fn from(b: bool) -> Self {
+        return OdinInt {
+            inner: if b { 1 } else { 0 },
+        };
     }
 }
 
@@ -89,36 +96,6 @@ impl TryFrom<OdinInt> for OdinCmd {
             OdinInt { inner: 0x67 } => Ok(OdinCmd::SessionEnd),
             _ => Err(DownloadProtocolError::InvalidOdinCmd(int)),
         }
-    }
-}
-
-/// Structure of all command packets.
-/// These are always sent flasher -> target.
-#[derive(Debug, Clone, PartialEq)]
-struct OdinCmdPacket {
-    kind: OdinCmd,
-    arg1: OdinInt,
-    arg2: Option<OdinInt>,
-}
-
-impl OdinCmdPacket {
-    /// Send the constructed packet in the proper format over the given `Communicator`.
-    fn send(&self, comm: &mut Box<dyn Communicator>) -> Result<()> {
-        let mut buf: Vec<u8> = Vec::new();
-        buf.reserve(CMD_PACKET_LEN);
-
-        let cmd_int: OdinInt = self.kind.into();
-        buf.extend_from_slice(&cmd_int.to_wire());
-        buf.extend_from_slice(&self.arg1.to_wire());
-
-        if self.arg2.is_some() {
-            buf.extend_from_slice(&self.arg2.unwrap().to_wire());
-        }
-
-        // Has to be padded to minimum packet size
-        buf.resize(CMD_PACKET_LEN, 0x00);
-
-        return comm.send(&buf);
     }
 }
 

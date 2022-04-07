@@ -233,7 +233,23 @@ fn flash(args: &ArgMatches) {
     download_protocol::magic_handshake(&mut conn).unwrap();
     download_protocol::begin_session(&mut conn).unwrap();
 
-    download_protocol::flash(&mut conn, &[]).unwrap();
+    // Find the PIT entry matching the partition to flash
+    let pit = download_protocol::download_pit(&mut conn).unwrap();
+    let partition_name: String = args.value_of_t_or_exit("partition");
+    let pit_entry = pit
+        .get_entry_by_name(&partition_name)
+        .expect("A partition by that name could not be found! Make sure it exists");
+
+    // TODO: Do this in a more efficient way than loading everything into RAM
+    let path = args
+        .value_of("filename")
+        .expect("Required argument not set! This is probably a clap bug.");
+    let path = Path::new(path);
+    let mut f = File::open(path).unwrap();
+    let mut data: Vec<u8> = Vec::new();
+    f.read_to_end(&mut data).unwrap();
+
+    download_protocol::flash(&mut conn, &data, pit_entry).unwrap();
 
     let reboot: bool = args.value_of_t_or_exit("reboot");
     download_protocol::end_session(&mut conn, reboot).unwrap();

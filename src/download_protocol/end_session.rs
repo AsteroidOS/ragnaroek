@@ -9,11 +9,7 @@ const REBOOT: u32 = 0x01;
 pub fn end_session(c: &mut Box<dyn Communicator>, reboot: bool) -> Result<()> {
     // Heimdall always first sends a session end, and only then a reboot.
     // Not sure if needed or we could send a reboot request immediately.
-    let p = OdinCmdPacket {
-        kind: OdinCmd::SessionEnd,
-        arg1: OdinInt::from(END_SESSION),
-        arg2: None,
-    };
+    let p = OdinCmdPacket::with_1_arg(OdinCmd::SessionEnd, OdinInt::from(END_SESSION));
     p.send(c)?;
 
     // We expect an 8-byte response from the target
@@ -28,11 +24,7 @@ pub fn end_session(c: &mut Box<dyn Communicator>, reboot: bool) -> Result<()> {
 
     if reboot {
         // Send a reboot
-        let p = OdinCmdPacket {
-            kind: OdinCmd::SessionEnd,
-            arg1: OdinInt::from(REBOOT),
-            arg2: None,
-        };
+        let p = OdinCmdPacket::with_1_arg(OdinCmd::SessionEnd, OdinInt::from(REBOOT));
         p.send(c)?;
 
         let resp = OdinCmdReply::read(c)?;

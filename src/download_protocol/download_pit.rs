@@ -37,11 +37,7 @@ pub fn download_pit(c: &mut Box<dyn Communicator>) -> Result<Pit> {
 /// Returns either an Error or the amount of bytes the target is about to transfer.
 /// The effects of calling this while a transfer is already in progress are unknown.
 fn initiate_pit_download(c: &mut Box<dyn Communicator>) -> Result<OdinInt> {
-    let p = OdinCmdPacket {
-        kind: OdinCmd::TransferPIT,
-        arg1: OdinInt::from(PIT_FLAG_DUMP),
-        arg2: None,
-    };
+    let p = OdinCmdPacket::with_1_arg(OdinCmd::TransferPIT, OdinInt::from(PIT_FLAG_DUMP));
     p.send(c)?;
 
     // We expect an 8-byte response from the target
@@ -70,11 +66,11 @@ fn fetch_pit_chunk(
     let chunk_idx: OdinInt = chunk_idx.into();
 
     // Send request
-    let p = OdinCmdPacket {
-        kind: OdinCmd::TransferPIT,
-        arg1: OdinInt::from(PIT_FLAG_CHUNK),
-        arg2: Some(chunk_idx),
-    };
+    let p = OdinCmdPacket::with_2_args(
+        OdinCmd::TransferPIT,
+        OdinInt::from(PIT_FLAG_CHUNK),
+        chunk_idx,
+    );
     p.send(c)?;
 
     // Read response
@@ -85,11 +81,7 @@ fn fetch_pit_chunk(
 /// Tells the target that the PIT transfer is over and checks for an appropriate target response.
 /// The effects of calling this without initiating a transfer or in the middle of one are unknown.
 fn end_pit_download(c: &mut Box<dyn Communicator>) -> Result<()> {
-    let p = OdinCmdPacket {
-        kind: OdinCmd::TransferPIT,
-        arg1: OdinInt::from(PIT_FLAG_END),
-        arg2: None,
-    };
+    let p = OdinCmdPacket::with_1_arg(OdinCmd::TransferPIT, OdinInt::from(PIT_FLAG_END));
     p.send(c)?;
 
     // We expect an 8-byte response from the target

@@ -10,12 +10,11 @@ const PROTO_VERSION: u32 = 0x04;
 /// Begins a session with a target.
 pub fn begin_session(c: &mut Box<dyn Communicator>) -> Result<()> {
     // The intial command is always just BeginSession
-    let p = OdinCmdPacket {
-        kind: OdinCmd::SessionStart,
-        arg1: OdinInt::from(BEGIN_SESSION),
-        arg2: Some(OdinInt::from(PROTO_VERSION)),
-    };
-
+    let p = OdinCmdPacket::with_2_args(
+        OdinCmd::SessionStart,
+        OdinInt::from(BEGIN_SESSION),
+        OdinInt::from(PROTO_VERSION),
+    );
     p.send(c)?;
 
     // We expect an 8-byte response from the target

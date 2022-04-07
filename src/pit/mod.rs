@@ -14,18 +14,18 @@ const PIT_ENTRY_SIZE: usize = 132;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PitEntry {
-    pit_type: PitType,
-    pit_device_type: PitDeviceType,
-    pit_id: PitIdentifier,
-    pit_attributes: Vec<PitAttribute>,
-    pit_update_attributes: Vec<PitUpdateAttribute>,
-    block_size_or_offset: OdinInt,
-    block_count: OdinInt,
-    file_offset: OdinInt,
-    file_size: OdinInt,
-    partition_name: String,
-    flash_filename: String,
-    fota_filename: String,
+    pub pit_type: PitType,
+    pub pit_device_type: PitDeviceType,
+    pub pit_id: PitIdentifier,
+    pub pit_attributes: Vec<PitAttribute>,
+    pub pit_update_attributes: Vec<PitUpdateAttribute>,
+    pub block_size_or_offset: OdinInt,
+    pub block_count: OdinInt,
+    pub file_offset: OdinInt,
+    pub file_size: OdinInt,
+    pub partition_name: String,
+    pub flash_filename: String,
+    pub fota_filename: String,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -49,29 +49,52 @@ impl Iterator for Pit {
     }
 }
 
+impl Pit {
+    pub fn get_entry_by_name(&self, name: &str) -> Option<PitEntry> {
+        for e in self.clone().into_iter() {
+            if e.partition_name == name {
+                return Some(e);
+            }
+        }
+        return None;
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
-enum PitType {
+pub enum PitType {
     Other = 0x00,
     Modem = 0x01,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-enum PitDeviceType {
+pub enum PitDeviceType {
     OneNand = 0x00,
     File = 0x01,
     Mmc = 0x02,
     All = 0x03,
 }
 
+impl Into<OdinInt> for PitDeviceType {
+    fn into(self) -> OdinInt {
+        use PitDeviceType::*;
+        match self {
+            OneNand => OdinInt::from(0x00),
+            File => OdinInt::from(0x01),
+            Mmc => OdinInt::from(0x02),
+            All => OdinInt::from(0x03),
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
-enum PitAttribute {
+pub enum PitAttribute {
     Write = 0x01,
     Stl = 0x02,
     Bml = 0x04,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-enum PitUpdateAttribute {
+pub enum PitUpdateAttribute {
     Fota = 0x01,
     Secure = 0x02,
 }
