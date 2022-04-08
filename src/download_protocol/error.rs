@@ -7,6 +7,10 @@ pub enum DownloadProtocolError {
     ///
     /// The argument is this identifier in it's OdinInt form.
     InvalidOdinCmd(OdinInt),
+    /// Target sent an invalid argument in a reply.
+    ///
+    /// The arguments are the expected argument and the actual argument.
+    UnexpectedOdinCmdArg(OdinInt, OdinInt),
     /// Target sent an unexpected OdinCmd identifier in a reply.
     ///
     /// The arguments are the expected command and the actual command.

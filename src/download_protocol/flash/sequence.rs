@@ -42,6 +42,7 @@ pub fn initiate(c: &mut Box<dyn Communicator>, sequence_size_bytes: u32) -> Resu
 /// `data` should be no larger than the maximum part size. However, that is not checked by this
 /// function to allow for more flexible (ab)use.
 fn transfer_part(c: &mut Box<dyn Communicator>, part: &[u8], part_idx: OdinInt) -> Result<()> {
+    log::debug!(target: "FLASH", "[Part {}] Transfering", part_idx);
     c.send(part)?;
 
     let resp = OdinCmdReply::read(c)?;
@@ -53,6 +54,7 @@ fn transfer_part(c: &mut Box<dyn Communicator>, part: &[u8], part_idx: OdinInt) 
     if resp.arg == OdinInt::from(FLASH_FAILURE) {
         return Err(DownloadProtocolError::ReportedPartFlashFailure.into());
     }
+    log::debug!(target: "FLASH", "[Part {}] OK", part_idx);
 
     return Ok(());
 }
