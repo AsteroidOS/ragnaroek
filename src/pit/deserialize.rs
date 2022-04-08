@@ -26,9 +26,9 @@ impl Pit {
 
         // Parse global data
         let (num_entries, data) = read_odin_int_as_usize_and_advance(data)?;
-        let gang_name = read_string_and_advance(&data)?;
+        let gang_name = read_string_and_advance(&data, 8)?;
         let data = &data[8..];
-        let project_name = read_string_and_advance(&data)?;
+        let project_name = read_string_and_advance(&data, 8)?;
         let data = &data[8..];
         let (proto_version, mut data) = read_odin_int_and_advance(&data)?;
 
@@ -69,15 +69,11 @@ fn read_odin_int_and_advance(data: &[u8]) -> Result<(OdinInt, &[u8])> {
     return Ok((int, data));
 }
 
-fn read_string_and_advance(data: &[u8]) -> Result<String> {
-    let data = &data[0..PIT_STRING_MAX_LEN];
+fn read_string_and_advance(data: &[u8], max_len: usize) -> Result<String> {
+    let data = &data[0..max_len];
     // C String constructor fails on seeing a NULL-byte; filter them out
     let data: Vec<u8> = data.iter().take_while(|x| **x != 0).map(|x| *x).collect();
     let c_str = CString::new(data).unwrap();
-    let c_str_len = c_str.clone().into_bytes_with_nul().len();
-    if c_str_len > PIT_STRING_MAX_LEN {
-        return Err(PitError::PitStringTooLong(c_str_len).into());
-    }
     let s = c_str.into_string().unwrap();
     return Ok(s);
 }
@@ -140,13 +136,13 @@ fn read_entry(data: &[u8]) -> Result<(PitEntry, &[u8])> {
     // FIXME: What did we miss to read?
     let (_, data) = read_odin_int_and_advance(data)?;
 
-    let partition_name = read_string_and_advance(data)?;
+    let partition_name = read_string_and_advance(data, PIT_STRING_MAX_LEN)?;
     let data = &data[32..];
 
-    let flash_filename = read_string_and_advance(data)?;
+    let flash_filename = read_string_and_advance(data, PIT_STRING_MAX_LEN)?;
     let data = &data[32..];
 
-    let fota_filename = read_string_and_advance(data)?;
+    let fota_filename = read_string_and_advance(data, PIT_STRING_MAX_LEN)?;
     let data = &data[32..];
 
     return Ok((

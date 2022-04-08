@@ -9,6 +9,4 @@ pub enum PitError {
     InvalidBinaryType(OdinInt),
     /// PIT partition storage device type was not valid.
     InvalidDeviceType(OdinInt),
-    /// PIT string was too long.
-    PitStringTooLong(usize),
 }
