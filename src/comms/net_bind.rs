@@ -1,4 +1,4 @@
-use super::Communicator;
+use super::*;
 
 use std::io::{Read, Result as IOResult, Write};
 use std::net::{TcpListener, TcpStream};
@@ -37,7 +37,7 @@ impl Communicator for Connection {
     /// Sends the given data to the device.
     /// Blocks until all data could be sent or an error occurs.
     fn send(&mut self, data: &[u8]) -> IOResult<()> {
-        log::trace!(target: "NET", "Send: {:?}", data);
+        log::trace!(target: "NET", "Send: {}", format_data_buf(&data));
         return self.s.write_all(data);
     }
 
@@ -46,7 +46,7 @@ impl Communicator for Connection {
         buf.resize(how_much, 0);
         self.s.read_exact(&mut buf)?;
 
-        log::trace!(target: "NET", "Recv: {:?}", buf);
+        log::trace!(target: "NET", "Recv: {}", format_data_buf(&buf));
         return Ok(buf);
     }
 }

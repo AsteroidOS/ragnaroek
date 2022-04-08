@@ -1,14 +1,17 @@
+use super::*;
+use rusb::{Device, Direction, GlobalContext, InterfaceDescriptor};
+
+use std::io::Result as IOResult;
+use std::time::Duration;
+
 /// These are taken from Heimdall, may not be exhaustive
 const SAMSUNG_VID: u16 = 0x04E8;
 const VALID_PIDS: [u16; 3] = [0x6601, 0x685D, 0x68C3];
 /// USB class that the desired configuration has (USB communications device)
 const USB_CLASS_CDC_DATA: u8 = 0x0A;
+/// Default USB timeout in seconds
+const USB_DEFAULT_TIMEOUT: Duration = Duration::from_secs(200);
 
-use super::Communicator;
-use rusb::{Device, Direction, GlobalContext, InterfaceDescriptor};
-
-use std::io::Result as IOResult;
-use std::time::Duration;
 /// `Connection` implements a USB ODIN mode connection.
 pub struct Connection {
     handle: rusb::DeviceHandle<GlobalContext>,
@@ -102,10 +105,10 @@ impl Communicator for Connection {
     /// Blocks until all data could be sent or an error occurs.
     fn send(&mut self, data: &[u8]) -> IOResult<()> {
         self.handle
-            .write_bulk(self.send_endpoint, data, Duration::from_secs(10))
+            .write_bulk(self.send_endpoint, data, USB_DEFAULT_TIMEOUT)
             .unwrap();
 
-        log::trace!(target: "USB", "Send: {:?}", data);
+        log::trace!(target: "USB", "Send: {}", format_data_buf(data));
         return Ok(());
     }
 
@@ -114,14 +117,14 @@ impl Communicator for Connection {
         buf.resize(how_much, 0);
         match self
             .handle
-            .read_bulk(self.recv_endpoint, &mut buf, Duration::from_secs(10))
+            .read_bulk(self.recv_endpoint, &mut buf, USB_DEFAULT_TIMEOUT)
         {
             // FIXME: Should read repeatedly until desired data volume is reached instead
             Ok(read) => buf.resize(read, 0),
             Err(e) => panic!("{}", e),
         }
 
-        log::trace!(target: "USB", "Recv: {:?}", buf);
+        log::trace!(target: "USB", "Recv: {}", format_data_buf(&buf));
         return Ok(buf);
     }
 }

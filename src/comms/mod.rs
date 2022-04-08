@@ -19,3 +19,29 @@ pub trait Communicator {
     /// Blocks until that much data could be collected or an error occurs.
     fn recv_exact(&mut self, how_much: usize) -> Result<Vec<u8>>;
 }
+
+/// Helper feature for debug logging
+fn format_data_buf(data: &[u8]) -> String {
+    let mut s = String::from("[");
+    // Cut trailing zeroes
+    let mut vec: Vec<u8> = data
+        .into_iter()
+        .rev()
+        .skip_while(|&x| *x == 0)
+        .map(|x| *x)
+        .collect();
+    vec = vec.into_iter().rev().collect();
+    let num_zeroes = data.len() - vec.len();
+
+    for b in vec {
+        // If the rest are trailing zeros, cut them
+        if num_zeroes > 0 {
+            s.push_str(&format!("<{} trailing 0's cut>", num_zeroes));
+            break;
+        } else {
+            s.push_str(&format!("0x{:X}, ", b));
+        }
+    }
+    s.push(']');
+    return s;
+}
