@@ -1,5 +1,7 @@
 use super::*;
 
+use crate::{Communicator, Result};
+
 use core::fmt;
 
 /// Seems like all Odin command packets are exactly 1024 bytes long
@@ -137,7 +139,10 @@ impl OdinCmdPacket {
         buf.resize(CMD_PACKET_LEN, 0x00);
 
         log::trace!(target: "CMD", "{}", self);
-        return comm.send(&buf);
+        match comm.send(&buf) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e.into()),
+        }
     }
 }
 

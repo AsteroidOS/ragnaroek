@@ -1,4 +1,5 @@
 use super::*;
+use crate::{Communicator, Result};
 
 use core::fmt;
 
