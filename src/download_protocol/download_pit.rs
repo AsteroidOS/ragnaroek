@@ -22,13 +22,13 @@ pub fn download_pit(c: &mut Box<dyn Communicator>) -> Result<Pit> {
     let total_len: usize = total_len
         .try_into()
         .expect("Not trying to run this on a 16-bit platform, are you?");
-    let mut have_len: usize = 0;
     let mut data: Vec<u8> = Vec::new();
     data.reserve(total_len);
 
-    while have_len < total_len {
-        data.extend_from_slice(&fetch_pit_chunk(c, have_len, total_len)?);
-        have_len = data.len();
+    let mut chunk_idx: usize = 0;
+    while data.len() < total_len {
+        data.extend_from_slice(&fetch_pit_chunk(c, total_len - data.len(), chunk_idx)?);
+        chunk_idx += 1;
     }
 
     end_pit_download(c)?;
@@ -57,15 +57,12 @@ fn initiate_pit_download(c: &mut Box<dyn Communicator>) -> Result<OdinInt> {
 }
 
 /// Puts in a request for the next chunk of PIT data with the target and fetches it.
-/// Returns an error or the read data.
-/// Only call as long as have_len < total_len (AKA the transfer isn't done yet).
 fn fetch_pit_chunk(
     c: &mut Box<dyn Communicator>,
-    have_len: usize,
-    total_len: usize,
+    total_remaining: usize,
+    chunk_idx: usize,
 ) -> Result<Vec<u8>> {
     // Calculate which chunk index to use
-    let chunk_idx: usize = have_len / PIT_CHUNK_SIZE;
     let chunk_idx: u32 = chunk_idx.try_into().unwrap();
     let chunk_idx: OdinInt = chunk_idx.into();
     log::debug!(target: "PIT DL", "[Chunk {}] Fetching", chunk_idx);
@@ -79,7 +76,7 @@ fn fetch_pit_chunk(
     p.send(c)?;
 
     // Read response
-    let left = core::cmp::min(total_len - have_len, PIT_CHUNK_SIZE);
+    let left = core::cmp::min(total_remaining, PIT_CHUNK_SIZE);
     let ret = c.recv_exact(left).map_err(|e| e.into());
     log::debug!(target: "PIT DL", "[Chunk {}] Fetching OK", chunk_idx);
     return ret;

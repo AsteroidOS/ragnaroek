@@ -91,11 +91,16 @@ fn read_entry(data: &[u8]) -> Result<(PitEntry, &[u8])> {
     };
 
     let (pit_device_type, data) = read_odin_int_and_advance(data)?;
+    use PitDeviceType::*;
     let pit_device_type = match pit_device_type.into() {
-        0x00 => PitDeviceType::OneNand,
-        0x01 => PitDeviceType::File,
-        0x02 => PitDeviceType::Mmc,
-        0x03 => PitDeviceType::All,
+        0x01 => Nand,
+        0x02 => Emmc,
+        0x03 => Spi,
+        0x04 => Ide,
+        0x05 => NandX16,
+        0x06 => Nor,
+        0x07 => NandWB1,
+        0x08 => Ufs,
         _ => return Err(PitError::InvalidDeviceType(pit_device_type).into()),
     };
 

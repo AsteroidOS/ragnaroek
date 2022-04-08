@@ -105,19 +105,28 @@ impl fmt::Display for PitType {
 
 #[derive(Debug, Copy, Clone, PartialEq, Tabled)]
 pub enum PitDeviceType {
-    OneNand = 0x00,
-    File = 0x01,
-    Mmc = 0x02,
-    All = 0x03,
+    Nand = 0x01,
+    Emmc = 0x02,
+    Spi = 0x03,
+    Ide = 0x04,
+    NandX16 = 0x05,
+    Nor = 0x06,
+    NandWB1 = 0x07,
+    Ufs = 0x08,
 }
 
 impl fmt::Display for PitDeviceType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use PitDeviceType::*;
         match self {
-            PitDeviceType::OneNand => write!(f, "OneNAND"),
-            PitDeviceType::File => write!(f, "File"),
-            PitDeviceType::Mmc => write!(f, "MMC"),
-            PitDeviceType::All => write!(f, "All"),
+            Nand => write!(f, "NAND"),
+            Emmc => write!(f, "EMCC"),
+            Spi => write!(f, "SPI"),
+            Ide => write!(f, "IDE"),
+            NandX16 => write!(f, "NANDX16"),
+            Nor => write!(f, "NOR"),
+            NandWB1 => write!(f, "NANDWB1"),
+            Ufs => write!(f, "UFS"),
         }
     }
 }
@@ -126,10 +135,14 @@ impl Into<OdinInt> for PitDeviceType {
     fn into(self) -> OdinInt {
         use PitDeviceType::*;
         match self {
-            OneNand => OdinInt::from(0x00),
-            File => OdinInt::from(0x01),
-            Mmc => OdinInt::from(0x02),
-            All => OdinInt::from(0x03),
+            Nand => OdinInt::from(0x01),
+            Emmc => OdinInt::from(0x02),
+            Spi => OdinInt::from(0x03),
+            Ide => OdinInt::from(0x04),
+            NandX16 => OdinInt::from(0x05),
+            Nor => OdinInt::from(0x06),
+            NandWB1 => OdinInt::from(0x07),
+            Ufs => OdinInt::from(0x08),
         }
     }
 }
