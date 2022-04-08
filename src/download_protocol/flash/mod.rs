@@ -17,10 +17,7 @@ pub fn flash(c: &mut Box<dyn Communicator>, data: &[u8], pit_entry: PitEntry) ->
 
     let resp = OdinCmdReply::read(c)?;
     if resp.cmd != OdinCmd::Flash {
-        panic!(
-            "Target sent unexpected Odin command in reply: {:?}",
-            resp.cmd
-        );
+        return Err(DownloadProtocolError::UnexpectedOdinCmd(OdinCmd::Flash, resp.cmd).into());
     }
 
     let mut bytes_flashed: usize = 0;

@@ -20,11 +20,9 @@ pub fn begin_session(c: &mut Box<dyn Communicator>) -> Result<()> {
     // We expect an 8-byte response from the target
     let resp = OdinCmdReply::read(c)?;
     if resp.cmd != OdinCmd::SessionStart {
-        return Err(DownloadProtocolError::InvalidTargetReplyOdinCmd(
-            OdinCmd::SessionStart,
-            resp.cmd,
-        )
-        .into());
+        return Err(
+            DownloadProtocolError::UnexpectedOdinCmd(OdinCmd::SessionStart, resp.cmd).into(),
+        );
     }
 
     // TODO: The second command has strange fields set in the Samsung implementation. Do we need to send a second command?

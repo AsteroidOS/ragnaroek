@@ -1,4 +1,4 @@
-use super::super::{OdinCmd, OdinCmdPacket, OdinCmdReply, OdinInt};
+use super::super::*;
 use crate::pit::*;
 use crate::Communicator;
 use crate::Result;
@@ -28,10 +28,7 @@ pub fn initiate(c: &mut Box<dyn Communicator>, sequence_size_bytes: u32) -> Resu
 
     let resp = OdinCmdReply::read(c)?;
     if resp.cmd != OdinCmd::Flash {
-        panic!(
-            "Target sent unexpected Odin command in reply: {:?}",
-            resp.cmd
-        );
+        return Err(DownloadProtocolError::UnexpectedOdinCmd(OdinCmd::Flash, resp.cmd).into());
     }
 
     // For USB, an empty bulk transfer is expected before the first part
@@ -49,15 +46,12 @@ fn transfer_part(c: &mut Box<dyn Communicator>, part: &[u8], part_idx: OdinInt) 
 
     let resp = OdinCmdReply::read(c)?;
     if resp.cmd != OdinCmd::Flash {
-        panic!(
-            "Target sent unexpected Odin command in reply: {:?}",
-            resp.cmd
-        );
+        return Err(DownloadProtocolError::UnexpectedOdinCmd(OdinCmd::Flash, resp.cmd).into());
     }
 
     // TODO: Retry
     if resp.arg == OdinInt::from(FLASH_FAILURE) {
-        panic!("Target reported failure to flash part of sequence");
+        return Err(DownloadProtocolError::ReportedPartFlashFailure.into());
     }
 
     return Ok(());
@@ -115,10 +109,7 @@ pub fn end(
 
     let resp = OdinCmdReply::read(c)?;
     if resp.cmd != OdinCmd::Flash {
-        panic!(
-            "Target sent unexpected Odin command in reply: {:?}",
-            resp.cmd
-        );
+        return Err(DownloadProtocolError::UnexpectedOdinCmd(OdinCmd::Flash, resp.cmd).into());
     }
 
     // For USB, an empty bulk transfer is expected after end

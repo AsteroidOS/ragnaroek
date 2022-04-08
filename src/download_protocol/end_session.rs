@@ -15,11 +15,7 @@ pub fn end_session(c: &mut Box<dyn Communicator>, reboot: bool) -> Result<()> {
     // We expect an 8-byte response from the target
     let resp = OdinCmdReply::read(c)?;
     if resp.cmd != OdinCmd::SessionEnd {
-        return Err(DownloadProtocolError::InvalidTargetReplyOdinCmd(
-            OdinCmd::SessionEnd,
-            resp.cmd,
-        )
-        .into());
+        return Err(DownloadProtocolError::UnexpectedOdinCmd(OdinCmd::SessionEnd, resp.cmd).into());
     }
 
     if reboot {
@@ -29,11 +25,9 @@ pub fn end_session(c: &mut Box<dyn Communicator>, reboot: bool) -> Result<()> {
 
         let resp = OdinCmdReply::read(c)?;
         if resp.cmd != OdinCmd::SessionEnd {
-            return Err(DownloadProtocolError::InvalidTargetReplyOdinCmd(
-                OdinCmd::SessionEnd,
-                resp.cmd,
-            )
-            .into());
+            return Err(
+                DownloadProtocolError::UnexpectedOdinCmd(OdinCmd::SessionEnd, resp.cmd).into(),
+            );
         }
     }
 
