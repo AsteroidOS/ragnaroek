@@ -1,8 +1,9 @@
 use super::*;
 
-use crate::pit::*;
 use crate::Communicator;
 use crate::Result;
+
+use pit::*;
 
 const PIT_CHUNK_SIZE: usize = 500;
 

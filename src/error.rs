@@ -1,9 +1,10 @@
 use crate::download_protocol::DownloadProtocolError;
-use crate::pit::PitError;
 use crate::upload_protocol::UploadProtocolError;
 
 use core::result;
 use std::io;
+
+use pit::PitError;
 
 /// Raganroek's top-level error type.
 ///

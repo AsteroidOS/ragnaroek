@@ -8,7 +8,6 @@
 mod comms;
 mod download_protocol;
 mod error;
-mod pit;
 mod upload_protocol;
 
 use std::{
@@ -21,7 +20,7 @@ pub use comms::Communicator;
 pub use error::{Error, Result};
 
 use clap::{App, AppSettings, Arg, ArgMatches};
-use tabled::Table;
+use pit::*;
 
 /// All the Odin .ini files I could find only ever mention this port
 const WIRELESS_PORT: u16 = 13579;
@@ -208,7 +207,7 @@ fn pretty_print_pit(pit: pit::Pit) {
     println!("Project: {}", pit.project_name);
     println!("Version: {}", pit.proto_version);
     println!("Entries:");
-    println!("{}", Table::new(pit).to_string());
+    println!("{}", tabled::Table::new(pit).to_string());
 }
 
 fn print_pit(args: &ArgMatches) {

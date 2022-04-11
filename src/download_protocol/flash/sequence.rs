@@ -1,7 +1,7 @@
 use super::super::*;
-use crate::pit::*;
 use crate::Communicator;
 use crate::Result;
+use pit::*;
 
 /// The maximal amount of data that can be transfered in a single sequence with default settings.
 ///
@@ -85,6 +85,7 @@ pub fn end(
     // AP and modem packets are the same, except for the added partition ID field for AP
     let is_modem: bool = pit_entry.pit_type == PitType::Modem;
     let p: OdinCmdPacket;
+    let device_type: u32 = pit_entry.pit_device_type.into();
     if is_modem {
         p = OdinCmdPacket::with_6_args(
             OdinCmd::Flash,
@@ -92,7 +93,7 @@ pub fn end(
             OdinInt::from(is_modem),
             sequence_length_bytes,
             OdinInt::from(0x00),
-            pit_entry.pit_device_type.into(),
+            OdinInt::from(device_type),
             OdinInt::from(is_last_sequence),
         );
     } else {
@@ -102,20 +103,20 @@ pub fn end(
             OdinInt::from(is_modem),
             sequence_length_bytes,
             OdinInt::from(0x00),
-            pit_entry.pit_device_type.into(),
-            pit_entry.pit_id,
+            OdinInt::from(device_type),
+            OdinInt::from(pit_entry.pit_id),
             OdinInt::from(is_last_sequence),
         );
     }
     p.send(c)?;
 
+    // For USB, an empty bulk transfer is expected after end
+    c.send(&[])?;
+
     let resp = OdinCmdReply::read(c)?;
     if resp.cmd != OdinCmd::Flash {
         return Err(DownloadProtocolError::UnexpectedOdinCmd(OdinCmd::Flash, resp.cmd).into());
     }
-
-    // For USB, an empty bulk transfer is expected after end
-    c.send(&[])?;
 
     return Ok(());
 }

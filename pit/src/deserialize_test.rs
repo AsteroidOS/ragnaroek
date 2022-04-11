@@ -1,15 +1,9 @@
-use std::{
-    fs::{self, File},
-    io::Read,
-    path::Path,
-};
-
-use crate::Error;
+use std::{fs::File, io::Read, path::Path};
 
 use super::Pit;
 use test_case::test_case;
 
-const PIT_PATH: &str = "src/pit/testdata/";
+const PIT_PATH: &str = "./testdata/";
 
 #[test_case("GT-I8190.pit" ; "GT-I8190.pit")]
 #[test_case("GT-I9500.pit" ; "GT-I9500.pit")]
@@ -94,7 +88,7 @@ const PIT_PATH: &str = "src/pit/testdata/";
 #[test_case("X1Q_USA_SINGLE.pit" ; "X1Q_USA_SINGLE.pit")]
 fn deserialize(file: &str) {
     // Enumerate all PIT files we have in the test directory
-    let mut pit_path = Path::new(PIT_PATH).join(file);
+    let pit_path = Path::new(PIT_PATH).join(file);
     let mut f = File::open(pit_path).unwrap();
     let mut data: Vec<u8> = Vec::new();
     f.read_to_end(&mut data).unwrap();

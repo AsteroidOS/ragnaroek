@@ -2,9 +2,9 @@ mod sequence;
 
 use super::*;
 
-use crate::pit::PitEntry;
 use crate::Communicator;
 use crate::Result;
+use pit::PitEntry;
 
 const FLASH_CMD_BEGIN_FLASH: u32 = 0x00;
 
