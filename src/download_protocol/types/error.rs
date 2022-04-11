@@ -21,4 +21,8 @@ pub enum DownloadProtocolError {
     InvalidMagicHandshake(Vec<u8>),
     /// Target reported a failure to flash a file part.
     ReportedPartFlashFailure,
+    /// Target sent an unexpected file flash part number in reply.
+    ///
+    /// The arguments are the expected part number and the actual part number.
+    UnexpectedFlashPart(OdinInt, OdinInt),
 }

@@ -50,10 +50,10 @@ fn transfer_part(c: &mut Box<dyn Communicator>, part: &[u8], part_idx: OdinInt) 
         return Err(DownloadProtocolError::UnexpectedOdinCmd(OdinCmd::Flash, resp.cmd).into());
     }
 
-    // TODO: Retry
-    if resp.arg == OdinInt::from(FLASH_FAILURE) {
-        return Err(DownloadProtocolError::ReportedPartFlashFailure.into());
+    if resp.arg != part_idx {
+        return Err(DownloadProtocolError::UnexpectedFlashPart(part_idx, resp.arg).into());
     }
+
     log::debug!(target: "FLASH", "[Part {}] OK", part_idx);
 
     return Ok(());
