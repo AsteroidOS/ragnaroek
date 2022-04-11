@@ -29,7 +29,7 @@ pub fn flash(c: &mut Box<dyn Communicator>, data: &[u8], pit_entry: PitEntry) ->
             .len()
             .try_into()
             .expect("Sequence length too large to fit into u32! This is probably a bug");
-        log::debug!(target: "FLASH", "[Sequence {}] Starting transfer", i);
+        log::debug!(target: "FLASH", "[Sequence {}] Starting transfer of {} bytes", i, sequence_len);
         sequence::initiate(c, sequence_len)?;
         log::debug!(target: "FLASH", "[Sequence {}] OK", i);
 
