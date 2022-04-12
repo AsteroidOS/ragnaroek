@@ -1,3 +1,5 @@
 /target
+/pit/target
 **.DS_Store
 /.stversions
+pit/Cargo.lock

@@ -3,10 +3,14 @@ use core::fmt;
 #[cfg(feature = "tabled")]
 use tabled::Tabled;
 
+#[cfg(feature = "serde")]
+use serde::Serialize;
+
 type PitIdentifier = u32;
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "tabled", derive(Tabled))]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct PitEntry {
     pub pit_type: PitType,
     pub pit_device_type: PitDeviceType,
@@ -47,6 +51,7 @@ fn display_pit_update_attributes(attrs: &Vec<PitUpdateAttribute>) -> String {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "tabled", derive(Tabled))]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum PitType {
     Other = 0x00,
     Modem = 0x01,
@@ -63,6 +68,7 @@ impl fmt::Display for PitType {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "tabled", derive(Tabled))]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum PitDeviceType {
     Nand = 0x01,
     Emmc = 0x02,
@@ -108,6 +114,7 @@ impl Into<u32> for PitDeviceType {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "tabled", derive(Tabled))]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum PitAttribute {
     Write = 0x01,
     Stl = 0x02,
@@ -126,6 +133,7 @@ impl fmt::Display for PitAttribute {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "tabled", derive(Tabled))]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum PitUpdateAttribute {
     Fota = 0x01,
     Secure = 0x02,

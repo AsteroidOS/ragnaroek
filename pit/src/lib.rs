@@ -7,6 +7,9 @@ mod deserialize_test;
 mod error;
 mod pit_entry;
 
+#[cfg(feature = "serde")]
+use serde::Serialize;
+
 pub use error::PitError;
 pub use pit_entry::*;
 
@@ -18,6 +21,7 @@ const PIT_MAGIC: [u8; 4] = [0x76, 0x98, 0x34, 0x12];
 const PIT_ENTRY_SIZE: usize = 132;
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Pit {
     /// Usually "COM_TAR2"
     pub gang_name: String,

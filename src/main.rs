@@ -19,7 +19,7 @@ use std::{
 pub use comms::Communicator;
 pub use error::{Error, Result};
 
-use clap::{App, AppSettings, Arg, ArgMatches};
+use clap::{Arg, ArgMatches, Command};
 use pit::*;
 
 /// All the Odin .ini files I could find only ever mention this port
@@ -56,19 +56,28 @@ fn define_cli() -> ArgMatches {
         .help("Choose whether to reboot target at the end.")
         .possible_values(["false", "true"])
         .default_value("false");
+    let output_format = Arg::new("output-format")
+        .long("output-format")
+        .short('o')
+        .help("Specify which output format to use.")
+        .takes_value(true)
+        .possible_values(["human", "json"])
+        .default_value("human")
+        .required(false);
 
     // Subcommands
-    let detect = App::new("detect")
+    let detect = Command::new("detect")
         .about("Test whether a supported device is connected, returning failure if not. Use wait-for-device if this is not what you want.")
         .arg(transport.clone())
         .arg(reboot.clone());
 
-    let print_pit = App::new("print-pit")
+    let print_pit = Command::new("print-pit")
         .about("Print the target's Partition Information Table (PIT).")
         .arg(transport.clone())
-        .arg(reboot.clone());
+        .arg(reboot.clone())
+        .arg(output_format.clone());
 
-    let parse_pit = App::new("parse-pit")
+    let parse_pit = Command::new("parse-pit")
         .about("Parse the provided Partition Information Table (PIT). This command does not interact with a target in any way.")
         .arg(Arg::new("pit-path")
             .long("pit-path")
@@ -76,9 +85,10 @@ fn define_cli() -> ArgMatches {
             .help("Specify which PIT file to use.")
             .takes_value(true)
             .required(true)
-        );
+        )
+        .arg(output_format.clone());
 
-    let flash = App::new("flash").about("Flash the given image to the given partition. Remember that flashing certain partitions incorrectly may brick your device!")
+    let flash = Command::new("flash").about("Flash the given image to the given partition. Remember that flashing certain partitions incorrectly may brick your device!")
     .arg(transport.clone())
         .arg(reboot.clone())
     .arg(Arg::new("partition")
@@ -96,7 +106,7 @@ fn define_cli() -> ArgMatches {
         .help("The filename of the file containing the partition contents you want to flash. Required.")
     );
 
-    let wait_for_device = App::new("wait-for-device")
+    let wait_for_device = Command::new("wait-for-device")
         .about(
             "Wait until a supported device is connected. Then return with a successful exit code.",
         )
@@ -106,13 +116,13 @@ fn define_cli() -> ArgMatches {
     // TODO: Add subcommands for displaying probe table etc.
     // TODO: Add support for specifying name of probe table memory range to dump
     // TODO: This is getting pretty hefty. Consider moving out of here.
-    let upload_mode = App::new("upload-mode")
+    let upload_mode =Command::new("upload-mode")
         .about(
             "Interact with a device in upload mode.
              Note that this is not the regular Odin mode!
              The device usually enters this mode after entering a key combo or a kernel panic.",
         )
-        .subcommand(App::new("dump")
+        .subcommand(Command::new("dump")
             .about("Dump the given memory region to a file.")
             .arg(transport.clone())
             .arg(Arg::new("filename")
@@ -137,14 +147,14 @@ fn define_cli() -> ArgMatches {
                 .help("Memory address the dump should end at (inclusive). Required.")
             )
         )
-        .subcommand(App::new("probe")
+        .subcommand(Command::new("probe")
             .about("Dump the probe table to stdout. This is a listing of memory regions and their properties.")
             .arg(transport.clone())
         );
 
     // Putting it all together
-    return App::new("ragnaroek")
-        .setting(AppSettings::ArgRequiredElseHelp)
+    return Command::new("ragnaroek")
+        .arg_required_else_help(true)
         .subcommands([
             detect,
             wait_for_device,
@@ -233,7 +243,18 @@ fn parse_pit(args: &ArgMatches) {
     f.read_to_end(&mut pit_data).unwrap();
 
     let pit = pit::Pit::deserialize(&pit_data).unwrap();
-    pretty_print_pit(pit);
+
+    let output_format = args
+        .value_of("output-format")
+        .expect("Required argument not set! This is probably a clap bug.");
+    match output_format {
+        "human" => pretty_print_pit(pit),
+        "json" => println!(
+            "{}",
+            serde_json::to_string(&pit).expect("Failed to serialize PIT! This is probably a bug.")
+        ),
+        _ => panic!("Unexpected output format! This is probably a clap bug."),
+    }
 }
 
 fn flash(args: &ArgMatches) {
@@ -274,7 +295,7 @@ fn get_upload_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>> {
             return Ok(Box::new(conn));
         }
         "net" => {
-            let mut conn = comms::net_connect::Connection::new(WIRELESS_TARGET_IP, WIRELESS_PORT);
+            let conn = comms::net_connect::Connection::new(WIRELESS_TARGET_IP, WIRELESS_PORT);
             return Ok(Box::new(conn));
         }
         _ => panic!("Unexpected invalid transport! This should've been caught by clap."),

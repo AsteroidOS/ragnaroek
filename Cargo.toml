@@ -17,7 +17,8 @@ either = { version = "1.6.1", default_features = false }
 env_logger = { version = "0.9.0", default_features = false, features = [ "termcolor" ] }
 log = { version = "0.4.16", default_features = false, features = [ "std" ] }
 rusb = { version = "0.9.0", features = ["vendored"], optional = true }
-pit = { path = "pit/", features = ["tabled"] }
+pit = { path = "pit/", features = ["tabled", "serde"] }
+serde_json = "1"
 
 [profile.release]
 lto = "fat"

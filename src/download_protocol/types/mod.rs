@@ -5,7 +5,7 @@ mod error;
 mod odin_int;
 
 pub use cmd::*;
-pub use cmd_packet::*;
-pub use cmd_reply::*;
+pub(crate) use cmd_packet::*;
+pub(crate) use cmd_reply::*;
 pub use error::*;
 pub use odin_int::*;
