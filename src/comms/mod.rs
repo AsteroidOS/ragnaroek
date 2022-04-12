@@ -34,13 +34,10 @@ fn format_data_buf(data: &[u8]) -> String {
     let num_zeroes = data.len() - vec.len();
 
     for b in vec {
-        // If the rest are trailing zeros, cut them
-        if num_zeroes > 0 {
-            s.push_str(&format!("<{} trailing 0's cut>", num_zeroes));
-            break;
-        } else {
-            s.push_str(&format!("0x{:X}, ", b));
-        }
+        s.push_str(&format!("0x{:X}, ", b));
+    }
+    if num_zeroes > 0 {
+        s.push_str(&format!("<{} trailing 0's cut>", num_zeroes));
     }
     s.push(']');
     return s;
