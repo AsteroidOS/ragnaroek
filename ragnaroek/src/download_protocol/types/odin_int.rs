@@ -4,7 +4,7 @@ use core::fmt;
 /// The integral type used in the Odin protocol and the PIT format.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct OdinInt {
-    pub inner: u32,
+    pub(crate) inner: u32,
 }
 
 impl OdinInt {

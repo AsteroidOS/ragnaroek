@@ -8,9 +8,13 @@ pub enum OdinCmd {
     /// would usually go.
     /// Including it as a variant here makes the code simpler.
     ChunkTransferOk,
+    /// Starts an Odin session or negotiates session parameters.
     SessionStart,
+    /// Requests a PIT read or write.
     TransferPIT,
+    /// Requests a partition flash.
     Flash,
+    /// Ends an Odin session.
     SessionEnd,
 }
 

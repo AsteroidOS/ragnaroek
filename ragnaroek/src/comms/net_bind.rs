@@ -9,6 +9,8 @@ pub struct Listener {
 }
 
 impl Listener {
+    /// Create a new listener listening on the given port, on all interfaces.
+    /// IPv4 only.
     pub fn new(port: u16) -> Listener {
         // All currently known devices do not use IPv6
         let l = TcpListener::bind(format!("0.0.0.0:{}", port)).unwrap();

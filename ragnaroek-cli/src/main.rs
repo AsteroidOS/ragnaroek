@@ -1,14 +1,7 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
-//! This crate implements a flash tool for Samsung Odin-compatible devices.
-//! It has both a binary CLI utility, as well as a library
-//! that allows you to easily build your own tools.
-
-mod comms;
-mod download_protocol;
-mod error;
-mod upload_protocol;
+//! This crate implements the CLI for a flash tool for Samsung Odin-compatible devices.
 
 use std::{
     fs::File,
@@ -16,8 +9,7 @@ use std::{
     path::Path,
 };
 
-pub use comms::Communicator;
-pub use error::{Error, Result};
+use ragnaroek::*;
 
 use clap::{Arg, ArgMatches, Command};
 use pit::*;
@@ -172,11 +164,11 @@ fn get_download_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>>
         .expect("Transport must have been set! This is probably clap bug.");
     match transport {
         "usb" => {
-            let conn = comms::usb::Connection::establish()?;
+            let conn = UsbConnection::establish()?;
             return Ok(Box::new(conn));
         }
         "net" => {
-            let mut listener = comms::net_bind::Listener::new(WIRELESS_PORT);
+            let mut listener = NetBindListener::new(WIRELESS_PORT);
             let conn = listener.accept()?;
             return Ok(Box::new(conn));
         }
@@ -291,11 +283,11 @@ fn get_upload_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>> {
         .expect("Transport must have been set! This is probably clap bug.");
     match transport {
         "usb" => {
-            let conn = comms::usb::Connection::establish()?;
+            let conn = UsbConnection::establish()?;
             return Ok(Box::new(conn));
         }
         "net" => {
-            let conn = comms::net_connect::Connection::new(WIRELESS_TARGET_IP, WIRELESS_PORT);
+            let conn = NetConnectConnection::new(WIRELESS_TARGET_IP, WIRELESS_PORT);
             return Ok(Box::new(conn));
         }
         _ => panic!("Unexpected invalid transport! This should've been caught by clap."),
