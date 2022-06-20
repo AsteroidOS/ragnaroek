@@ -6,3 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+dark-light = "0.2.2"
+# TODO: Conditionally enable wayland for Linux
+#[target.'cfg(linux)'.dependencies]
+#fltk = { version = "1.3.5", features = [ "fltk-bundled", "use-wayland" ] }
+#[target.'cfg(not(linux))'.dependencies]
+fltk = { version = "^1.3", features = [ "fltk-bundled" ] }
+fltk-theme = "0.4.2"
+pit = { path = "../pit", features = [ "serde" ] }
+ragnaroek = { path = "../ragnaroek", features = [ "usb" ] }
