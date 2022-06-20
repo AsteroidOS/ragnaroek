@@ -3,6 +3,8 @@ use super::{OdinCmd, OdinInt};
 /// Error type returned when the protocol is violated.
 #[derive(Debug, Clone, PartialEq)]
 pub enum DownloadProtocolError {
+    /// Target speaks an unknown protocol version.
+    UnknownProtoVersion(OdinInt),
     /// Target sent an invalid OdinCmd identifier in a reply.
     ///
     /// The argument is this identifier in it's OdinInt form.
