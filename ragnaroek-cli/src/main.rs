@@ -253,7 +253,7 @@ fn flash(args: &ArgMatches) {
     let mut conn: Box<dyn Communicator> = get_download_communicator(args).unwrap();
 
     download_protocol::magic_handshake(&mut conn).unwrap();
-    download_protocol::begin_session(&mut conn).unwrap();
+    let params = download_protocol::begin_session(&mut conn).unwrap();
 
     // Find the PIT entry matching the partition to flash
     let pit = download_protocol::download_pit(&mut conn).unwrap();
@@ -271,7 +271,7 @@ fn flash(args: &ArgMatches) {
     let mut data: Vec<u8> = Vec::new();
     f.read_to_end(&mut data).unwrap();
 
-    download_protocol::flash(&mut conn, &data, pit_entry).unwrap();
+    download_protocol::flash(&mut conn, params, &data, pit_entry).unwrap();
 
     let reboot: bool = args.value_of_t_or_exit("reboot");
     download_protocol::end_session(&mut conn, reboot).unwrap();

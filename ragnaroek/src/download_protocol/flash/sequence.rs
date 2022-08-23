@@ -1,28 +1,20 @@
 use super::super::*;
+use crate::download_protocol::begin_session::SessionParams;
 use crate::Communicator;
 use crate::Result;
 use pit::*;
 
-/// The maximal amount of data that can be transfered in a single sequence with default settings.
-///
-/// Non-default settings are not yet supported.
-pub const MAX_SEQUENCE_SIZE_BYTES: usize = PART_MAX_SIZE * PART_MAX_COUNT;
-
+// These values are correct for flashing without compression.
 const FLASH_CMD_SEQUENCE_BEGIN: u32 = 0x02;
 const FLASH_CMD_SEQUENCE_END: u32 = 0x03;
 
-const PART_MAX_SIZE: usize = 131072; // 128KiB
-const PART_MAX_COUNT: usize = 800;
-
-const FLASH_FAILURE: u32 = 0xFF;
-
 /// Tell the target to expect a file sequence (series of packets making up part of the file).
-pub fn initiate(c: &mut Box<dyn Communicator>, sequence_size_bytes: u32) -> Result<()> {
+pub fn initiate(c: &mut Box<dyn Communicator>, sp: SessionParams) -> Result<()> {
     // Tell target that we want to flash
     let p = OdinCmdPacket::with_2_args(
         OdinCmd::Flash,
         OdinInt::from(FLASH_CMD_SEQUENCE_BEGIN),
-        OdinInt::from(sequence_size_bytes),
+        OdinInt::from(sp.max_seq_size_bytes),
     );
     p.send(c)?;
 
@@ -31,41 +23,45 @@ pub fn initiate(c: &mut Box<dyn Communicator>, sequence_size_bytes: u32) -> Resu
         return Err(DownloadProtocolError::UnexpectedOdinCmd(OdinCmd::Flash, resp.cmd).into());
     }
 
-    // For USB, an empty bulk transfer is expected before the first part
+    // For USB, an empty bulk transfer is expected before the first packet
     c.send(&[])?;
 
     return Ok(());
 }
 
-/// Send a part of the file sequence to the target.
+/// Send a packet of the file sequence to the target.
 ///
-/// `data` should be no larger than the maximum part size. However, that is not checked by this
+/// `data` should be no larger than the maximum negotiated packet size. However, that is not checked by this
 /// function to allow for more flexible (ab)use.
-fn transfer_part(c: &mut Box<dyn Communicator>, part: &[u8], part_idx: OdinInt) -> Result<()> {
-    log::debug!(target: "FLASH", "[Part {}] Transfering", part_idx);
-    c.send(part)?;
+fn send_packet(c: &mut Box<dyn Communicator>, packet: &[u8], packet_idx: OdinInt) -> Result<()> {
+    log::debug!(target: "FLASH", "[Packet {}] Transferring", packet_idx);
+    c.send(packet)?;
 
     let resp = OdinCmdReply::read(c)?;
     if resp.cmd != OdinCmd::Flash {
         return Err(DownloadProtocolError::UnexpectedOdinCmd(OdinCmd::Flash, resp.cmd).into());
     }
 
-    if resp.arg != part_idx {
-        return Err(DownloadProtocolError::UnexpectedFlashPart(part_idx, resp.arg).into());
+    if resp.arg != packet_idx {
+        return Err(DownloadProtocolError::UnexpectedFlashPacket(packet_idx, resp.arg).into());
     }
 
-    log::debug!(target: "FLASH", "[Part {}] OK", part_idx);
+    log::debug!(target: "FLASH", "[Packet {}] OK", packet_idx);
 
     return Ok(());
 }
 
-/// Send an entire sequence of parts to the target.
+/// Send an entire sequence of packets to the target.
 ///
 /// This should be called once per sequence, after `initiate`.
-pub fn transfer(c: &mut Box<dyn Communicator>, data: &[u8]) -> Result<()> {
-    for (part_idx, part) in data.chunks(PART_MAX_SIZE).enumerate() {
-        let part_idx: u32 = part_idx.try_into().unwrap();
-        transfer_part(c, part, OdinInt::from(part_idx))?;
+pub fn transfer(
+    c: &mut Box<dyn Communicator>,
+    max_packet_size: usize,
+    sequence: &[u8],
+) -> Result<()> {
+    for (packet_idx, packet) in sequence.chunks(max_packet_size).enumerate() {
+        let packet_idx: u32 = packet_idx.try_into().unwrap();
+        send_packet(c, packet, OdinInt::from(packet_idx))?;
     }
     return Ok(());
 }

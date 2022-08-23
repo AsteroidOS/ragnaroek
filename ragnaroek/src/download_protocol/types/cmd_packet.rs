@@ -107,6 +107,18 @@ impl OdinCmdPacket {
         return p;
     }
 
+    /// Some commands require sending 64-bit arguments.
+    /// This special constructor converts them into 320-bit ones.
+    pub fn with_u64_arg(kind: OdinCmd, arg1: OdinInt, arg2: u64) -> OdinCmdPacket {
+        // Convert u64 to proper endianness
+        let converted = arg2.to_le_bytes();
+        // Split into OdinInt's
+        let first = u32::from_le_bytes([converted[0], converted[1], converted[2], converted[3]]);
+        let second = u32::from_le_bytes([converted[4], converted[5], converted[6], converted[7]]);
+
+        return OdinCmdPacket::with_3_args(kind, arg1, first.into(), second.into());
+    }
+
     /// Send the constructed packet in the proper format over the given `Communicator`.
     pub(crate) fn send(&self, comm: &mut Box<dyn Communicator>) -> Result<()> {
         let mut buf: Vec<u8> = Vec::new();
