@@ -14,9 +14,7 @@ const PIT_FLAG_END: u32 = 0x03;
 const PIT_END_OK: u32 = 0x00;
 
 /// Downloads partitioning data from the target.
-/// Must be called after a session has been established.
-/// TODO: Enforce this constraint via type system
-pub fn download_pit(c: &mut Box<dyn Communicator>) -> Result<Pit> {
+pub(crate) fn download_pit(c: &mut Box<dyn Communicator>) -> Result<Pit> {
     log::info!(target: "PIT DL", "Start PIT download");
     let total_len: OdinInt = initiate_pit_download(c)?;
     let total_len: u32 = total_len.into();

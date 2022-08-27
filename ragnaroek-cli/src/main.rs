@@ -177,31 +177,24 @@ fn get_download_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>>
 }
 
 fn detect(args: &ArgMatches) {
-    let mut conn: Box<dyn Communicator> = get_download_communicator(args).unwrap();
-
-    download_protocol::magic_handshake(&mut conn).unwrap();
-    download_protocol::begin_session(&mut conn).unwrap();
+    let comm: Box<dyn Communicator> = get_download_communicator(args).unwrap();
+    let sess = download_protocol::Session::begin(comm).unwrap();
     let reboot: bool = args.value_of_t_or_exit("reboot");
-    download_protocol::end_session(&mut conn, reboot).unwrap();
+    sess.end(reboot).unwrap();
 }
 
 fn wait_for_device(args: &ArgMatches) {
-    // This loop is pretty much the only difference to detect
-    let mut conn: Box<dyn Communicator>;
+    let _: Box<dyn Communicator>;
     loop {
         match get_download_communicator(args) {
-            Ok(c) => {
-                conn = c;
+            Ok(_) => {
                 break;
             }
             Err(_) => {}
         }
     }
 
-    download_protocol::magic_handshake(&mut conn).unwrap();
-    download_protocol::begin_session(&mut conn).unwrap();
-    let reboot: bool = args.value_of_t_or_exit("reboot");
-    download_protocol::end_session(&mut conn, reboot).unwrap();
+    detect(args);
 }
 
 fn pretty_print_pit(pit: pit::Pit) {
@@ -213,15 +206,13 @@ fn pretty_print_pit(pit: pit::Pit) {
 }
 
 fn print_pit(args: &ArgMatches) {
-    let mut conn: Box<dyn Communicator> = get_download_communicator(args).unwrap();
-
-    download_protocol::magic_handshake(&mut conn).unwrap();
-    download_protocol::begin_session(&mut conn).unwrap();
-    let pit = download_protocol::download_pit(&mut conn).unwrap();
+    let comm: Box<dyn Communicator> = get_download_communicator(args).unwrap();
+    let mut sess = download_protocol::Session::begin(comm).unwrap();
+    let pit = sess.download_pit().unwrap();
     pretty_print_pit(pit);
 
     let reboot: bool = args.value_of_t_or_exit("reboot");
-    download_protocol::end_session(&mut conn, reboot).unwrap();
+    sess.end(reboot).unwrap();
 }
 
 fn parse_pit(args: &ArgMatches) {
@@ -250,13 +241,11 @@ fn parse_pit(args: &ArgMatches) {
 }
 
 fn flash(args: &ArgMatches) {
-    let mut conn: Box<dyn Communicator> = get_download_communicator(args).unwrap();
-
-    download_protocol::magic_handshake(&mut conn).unwrap();
-    let params = download_protocol::begin_session(&mut conn).unwrap();
+    let comm: Box<dyn Communicator> = get_download_communicator(args).unwrap();
+    let mut sess = download_protocol::Session::begin(comm).unwrap();
 
     // Find the PIT entry matching the partition to flash
-    let pit = download_protocol::download_pit(&mut conn).unwrap();
+    let pit = sess.download_pit().unwrap();
     let partition_name: String = args.value_of_t_or_exit("partition");
     let pit_entry = pit
         .get_entry_by_name(&partition_name)
@@ -271,10 +260,10 @@ fn flash(args: &ArgMatches) {
     let mut data: Vec<u8> = Vec::new();
     f.read_to_end(&mut data).unwrap();
 
-    download_protocol::flash(&mut conn, params, &data, pit_entry).unwrap();
+    sess.flash(&data, pit_entry).unwrap();
 
     let reboot: bool = args.value_of_t_or_exit("reboot");
-    download_protocol::end_session(&mut conn, reboot).unwrap();
+    sess.end(reboot).unwrap();
 }
 
 fn get_upload_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>> {

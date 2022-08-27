@@ -13,7 +13,7 @@ const SET_TOTAL_SIZE: u32 = 0x02;
 /// The top-level flash function.
 ///
 /// It chops the file up into flash sequences and sends them all to the target.
-pub fn flash(
+pub(crate) fn flash(
     c: &mut Box<dyn Communicator>,
     sp: SessionParams,
     data: &[u8],

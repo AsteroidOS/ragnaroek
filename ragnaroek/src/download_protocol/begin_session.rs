@@ -117,7 +117,7 @@ fn guess_version_and_compression(c: &mut Box<dyn Communicator>) -> Result<(Proto
 }
 
 /// Begins a session with a target.
-pub fn begin_session(c: &mut Box<dyn Communicator>) -> Result<SessionParams> {
+pub(crate) fn begin_session(c: &mut Box<dyn Communicator>) -> Result<SessionParams> {
     let (proto_version, supports_compression) = guess_version_and_compression(c).unwrap();
 
     let max_packet_size = negotiate_packet_size(c, proto_version)?.inner;
