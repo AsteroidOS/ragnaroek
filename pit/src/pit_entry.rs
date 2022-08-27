@@ -85,7 +85,7 @@ impl fmt::Display for PitDeviceType {
         use PitDeviceType::*;
         match self {
             Nand => write!(f, "NAND"),
-            Emmc => write!(f, "EMCC"),
+            Emmc => write!(f, "EMMC"),
             Spi => write!(f, "SPI"),
             Ide => write!(f, "IDE"),
             NandX16 => write!(f, "NANDX16"),
