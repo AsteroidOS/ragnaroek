@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::sync::mpsc;
 use std::thread;
 
-pub fn download(ui: &mut egui::Ui, c: &mut Box<dyn ragnaroek::Communicator>) -> pit::Pit {
+pub fn download(c: &mut Box<dyn ragnaroek::Communicator>) -> pit::Pit {
     ragnaroek::download_protocol::begin_session(c).unwrap();
     let pit = ragnaroek::download_protocol::download_pit(c).unwrap();
     return pit;
@@ -32,10 +32,13 @@ pub fn open_dialog() -> mpsc::Receiver<Option<PathBuf>> {
 /// Draw the PIT contents as a table.
 pub fn draw_table(ui: &mut egui::Ui, pit: pit::Pit) {
     // Not part of table, but related
-    ui.vertical(|ui| {
-        ui.label(format!("Gang Name: {}", pit.gang_name));
-        ui.label(format!("Project Name: {}", pit.project_name));
-        ui.label(format!("Version: {}", pit.proto_version));
+    ui.horizontal(|ui| {
+        ui.heading("Gang Name: ");
+        ui.monospace(pit.gang_name.clone());
+        ui.heading("Project Name: ");
+        ui.monospace(pit.project_name.clone());
+        ui.heading("Version: ");
+        ui.monospace(format!("{}", pit.proto_version));
     });
     let headings = [
         "Type",

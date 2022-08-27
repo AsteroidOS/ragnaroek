@@ -2,9 +2,9 @@
 
 mod pit_ui;
 
-use eframe::egui;
+use eframe::egui::{self, RichText};
 use pit;
-use ragnaroek;
+use ragnaroek::{self, download_protocol};
 use std::{
     fs,
     path::PathBuf,
@@ -74,49 +74,35 @@ fn connect(m: CommsMode) -> ragnaroek::Result<Box<dyn ragnaroek::Communicator>> 
 
 impl eframe::App for RagnaroekApp {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
+        egui::TopBottomPanel::top("title").show(ctx, |ui| {
             ui.vertical_centered_justified(|ui| {
-                ui.heading("Ragnaroek");
+                // Label displaying connection status
+                if self.conn.is_some() {
+                    ui.heading(
+                        RichText::new("Device connected: YES ☑").color(egui::Color32::GREEN),
+                    );
+                } else {
+                    ui.heading(RichText::new("Device connected: NO ❌").color(egui::Color32::RED));
+                }
             });
+        });
 
-            ui.vertical(|ui| {
-                ui.horizontal(|ui| {
-                    ui.vertical(|ui| {
-                        // Allow user to pick how to communicate with device
-                        ui.heading("Communications mode");
-                        for (mode, text) in [
-                            (CommsMode::Usb, "USB"),
-                            (CommsMode::NetBind, "Net (Bind)"),
-                            (CommsMode::NetConnect, "Net (Connect)"),
-                        ] {
-                            let rbtn = egui::RadioButton::new(self.comms_mode == mode, text);
-                            if ui
-                                .add_enabled(self.comms_mode_radio_enabled, rbtn)
-                                .clicked()
-                            {
-                                self.comms_mode = mode;
-                            }
-                        }
-                    });
-                    // Button for establishing connection
-                    if ui.button("Detect").clicked() {
-                        let c = connect(self.comms_mode).unwrap();
-                        self.conn = Some(c);
-                    }
-
-                    // Label displaying connection status
-                    if self.conn.is_some() {
-                        ui.colored_label(egui::Color32::GREEN, "Connected: YES ✓");
-                    } else {
-                        ui.colored_label(egui::Color32::RED, "Connected: NO ❌");
-                    }
-                });
+        egui::TopBottomPanel::bottom("actions").show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                // Button for establishing connection
+                if ui.button("Connect to device").clicked() {
+                    let mut c = connect(self.comms_mode).unwrap();
+                    download_protocol::magic_handshake(&mut c).unwrap();
+                    download_protocol::begin_session(&mut c).unwrap();
+                    download_protocol::end_session(&mut c, false).unwrap();
+                    self.conn = Some(c);
+                }
 
                 // Print PIT from device
-                let print_pit_btn = egui::Button::new("Print PIT");
+                let print_pit_btn = egui::Button::new("Parse PIT from device");
                 if ui.add_enabled(self.conn.is_some(), print_pit_btn).clicked() {
                     let conn = self.conn.as_mut().unwrap();
-                    self.rendering_pit = Some(pit_ui::download(ui, conn));
+                    self.rendering_pit = Some(pit_ui::download(conn));
                 }
 
                 // Parse PIT from file
@@ -147,6 +133,33 @@ impl eframe::App for RagnaroekApp {
                         }
                     }
                 }
+
+                // Clear PIT display
+                if ui.button("Clear PIT display").clicked() {
+                    self.rendering_pit = None;
+                }
+            });
+        });
+
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    // Allow user to pick how to communicate with device
+                    ui.heading("Communications mode: ");
+                    for (mode, text) in [
+                        (CommsMode::Usb, "USB"),
+                        (CommsMode::NetBind, "Net (Bind)"),
+                        (CommsMode::NetConnect, "Net (Connect)"),
+                    ] {
+                        let rbtn = egui::RadioButton::new(self.comms_mode == mode, text);
+                        if ui
+                            .add_enabled(self.comms_mode_radio_enabled, rbtn)
+                            .clicked()
+                        {
+                            self.comms_mode = mode;
+                        }
+                    }
+                });
                 // If there's a PIT file to render, do it
                 if self.rendering_pit.is_some() {
                     let p = self.rendering_pit.as_ref().unwrap();
