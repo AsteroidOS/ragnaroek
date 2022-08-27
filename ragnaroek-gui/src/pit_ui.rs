@@ -31,6 +31,7 @@ pub fn open_dialog() -> mpsc::Receiver<Option<PathBuf>> {
 
 /// Draw the PIT contents as a table.
 pub fn draw_table(ui: &mut egui::Ui, pit: pit::Pit) {
+    ui.add_space(20.0);
     // Not part of table, but related
     ui.horizontal(|ui| {
         ui.heading("Gang Name: ");

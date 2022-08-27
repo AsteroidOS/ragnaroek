@@ -9,6 +9,7 @@ use std::{
     fs,
     path::PathBuf,
     sync::mpsc::{self, TryRecvError},
+    thread,
 };
 
 /// All the Odin .ini files I could find only ever mention this port
@@ -40,8 +41,9 @@ enum CommsMode {
 struct RagnaroekApp {
     comms_mode: CommsMode,
     comms_mode_radio_enabled: bool,
-    conn: Option<Box<dyn ragnaroek::Communicator>>,
+    comm: Option<Box<dyn ragnaroek::Communicator>>,
     pit_dialog_receiver: Option<mpsc::Receiver<Option<PathBuf>>>,
+    comm_receiver: Option<mpsc::Receiver<ragnaroek::Result<Box<dyn ragnaroek::Communicator>>>>,
     rendering_pit: Option<pit::Pit>,
 }
 
@@ -72,12 +74,31 @@ fn connect(m: CommsMode) -> ragnaroek::Result<Box<dyn ragnaroek::Communicator>> 
     }
 }
 
+fn connect_and_detect(
+    m: CommsMode,
+) -> mpsc::Receiver<ragnaroek::Result<Box<dyn ragnaroek::Communicator>>> {
+    let (send, recv) = mpsc::channel();
+    thread::spawn(move || {
+        let mut c = connect(m).unwrap();
+        download_protocol::magic_handshake(&mut c).unwrap();
+        download_protocol::begin_session(&mut c).unwrap();
+        download_protocol::end_session(&mut c, false).unwrap();
+        send.send(Ok(c)).unwrap();
+    });
+    return recv;
+}
+
 impl eframe::App for RagnaroekApp {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
         egui::TopBottomPanel::top("title").show(ctx, |ui| {
             ui.vertical_centered_justified(|ui| {
                 // Label displaying connection status
-                if self.conn.is_some() {
+                if self.comm_receiver.is_some() {
+                    ui.heading(
+                        RichText::new("Device connected: Connecting...")
+                            .color(egui::Color32::YELLOW),
+                    );
+                } else if self.comm.is_some() {
                     ui.heading(
                         RichText::new("Device connected: YES ☑").color(egui::Color32::GREEN),
                     );
@@ -89,19 +110,35 @@ impl eframe::App for RagnaroekApp {
 
         egui::TopBottomPanel::bottom("actions").show(ctx, |ui| {
             ui.horizontal(|ui| {
+                // If we're in the middle of connection establishment, check if it's done
+                if self.comm_receiver.is_some() {
+                    let r = self.comm_receiver.as_mut().unwrap();
+                    match r.try_recv() {
+                        // Have a Communicator
+                        Ok(Ok(comm)) => {
+                            self.comm_receiver = None;
+                            ui.set_enabled(true);
+                            self.comm = Some(comm);
+                        }
+                        // Error occurred while obtaining communicator
+                        Ok(Err(err)) => panic!("{:?}", err),
+                        // Nothing happened yet, keep waiting
+                        Err(TryRecvError::Empty) => {
+                            ui.set_enabled(false);
+                        }
+                        _ => panic!("Unexpected state while reading communicator channel"),
+                    }
+                }
                 // Button for establishing connection
                 if ui.button("Connect to device").clicked() {
-                    let mut c = connect(self.comms_mode).unwrap();
-                    download_protocol::magic_handshake(&mut c).unwrap();
-                    download_protocol::begin_session(&mut c).unwrap();
-                    download_protocol::end_session(&mut c, false).unwrap();
-                    self.conn = Some(c);
+                    // Because devices take forever to respond, this function runs it in a separate thread.
+                    self.comm_receiver = Some(connect_and_detect(self.comms_mode));
                 }
 
                 // Print PIT from device
                 let print_pit_btn = egui::Button::new("Parse PIT from device");
-                if ui.add_enabled(self.conn.is_some(), print_pit_btn).clicked() {
-                    let conn = self.conn.as_mut().unwrap();
+                if ui.add_enabled(self.comm.is_some(), print_pit_btn).clicked() {
+                    let conn = self.comm.as_mut().unwrap();
                     self.rendering_pit = Some(pit_ui::download(conn));
                 }
 

@@ -8,7 +8,7 @@ pub use std::io::Result;
 
 /// This trait implements an interface that allows for decoupling
 /// the transport of bytes to and from the target from the actual Odin protocol implementation.
-pub trait Communicator {
+pub trait Communicator: Send {
     /// Send the entire buffer to the device, blocking until it's sent or an error occurs.
     /// Will retry send if the underlying medium supports it.
     ///
