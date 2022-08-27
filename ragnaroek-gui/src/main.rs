@@ -9,6 +9,7 @@ use std::{
     fs,
     path::PathBuf,
     sync::mpsc::{self, TryRecvError},
+    sync::{Arc, Mutex},
     thread,
 };
 
@@ -16,6 +17,8 @@ use std::{
 const WIRELESS_PORT: u16 = 13579;
 /// All the targets implementing wireless mode seem to use this IP
 const WIRELESS_TARGET_IP: &str = "192.168.49.1";
+
+pub type SharedSession = Arc<Mutex<ragnaroek::download_protocol::Session>>;
 
 fn main() {
     let mut native_options = eframe::NativeOptions::default();
@@ -39,18 +42,19 @@ enum CommsMode {
 
 #[derive(Default)]
 struct RagnaroekApp {
+    interaction_enabled: bool,
     comms_mode: CommsMode,
-    comms_mode_radio_enabled: bool,
-    comm: Option<Box<dyn ragnaroek::Communicator>>,
+    comm: Option<SharedSession>,
     pit_dialog_receiver: Option<mpsc::Receiver<Option<PathBuf>>>,
-    comm_receiver: Option<mpsc::Receiver<ragnaroek::Result<Box<dyn ragnaroek::Communicator>>>>,
+    comm_receiver: Option<mpsc::Receiver<ragnaroek::Result<SharedSession>>>,
+    pit_receiver: Option<mpsc::Receiver<ragnaroek::Result<pit::Pit>>>,
     rendering_pit: Option<pit::Pit>,
 }
 
 impl RagnaroekApp {
     fn new(_: &eframe::CreationContext<'_>) -> Self {
         let mut s = Self::default();
-        s.comms_mode_radio_enabled = true;
+        s.interaction_enabled = true;
         return s;
     }
 }
@@ -74,16 +78,13 @@ fn connect(m: CommsMode) -> ragnaroek::Result<Box<dyn ragnaroek::Communicator>> 
     }
 }
 
-fn connect_and_detect(
-    m: CommsMode,
-) -> mpsc::Receiver<ragnaroek::Result<Box<dyn ragnaroek::Communicator>>> {
+fn connect_and_detect(m: CommsMode) -> mpsc::Receiver<ragnaroek::Result<SharedSession>> {
     let (send, recv) = mpsc::channel();
     thread::spawn(move || {
-        let mut c = connect(m).unwrap();
-        download_protocol::magic_handshake(&mut c).unwrap();
-        download_protocol::begin_session(&mut c).unwrap();
-        download_protocol::end_session(&mut c, false).unwrap();
-        send.send(Ok(c)).unwrap();
+        let c = connect(m).unwrap();
+        let s = download_protocol::Session::begin(c).unwrap();
+        send.send(ragnaroek::Result::Ok(Arc::new(Mutex::new(s))))
+            .unwrap();
     });
     return recv;
 }
@@ -91,6 +92,7 @@ fn connect_and_detect(
 impl eframe::App for RagnaroekApp {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
         egui::TopBottomPanel::top("title").show(ctx, |ui| {
+            ui.set_enabled(self.interaction_enabled);
             ui.vertical_centered_justified(|ui| {
                 // Label displaying connection status
                 if self.comm_receiver.is_some() {
@@ -109,6 +111,7 @@ impl eframe::App for RagnaroekApp {
         });
 
         egui::TopBottomPanel::bottom("actions").show(ctx, |ui| {
+            ui.set_enabled(self.interaction_enabled);
             ui.horizontal(|ui| {
                 // If we're in the middle of connection establishment, check if it's done
                 if self.comm_receiver.is_some() {
@@ -117,14 +120,14 @@ impl eframe::App for RagnaroekApp {
                         // Have a Communicator
                         Ok(Ok(comm)) => {
                             self.comm_receiver = None;
-                            ui.set_enabled(true);
+                            self.interaction_enabled = true;
                             self.comm = Some(comm);
                         }
                         // Error occurred while obtaining communicator
                         Ok(Err(err)) => panic!("{:?}", err),
                         // Nothing happened yet, keep waiting
                         Err(TryRecvError::Empty) => {
-                            ui.set_enabled(false);
+                            self.interaction_enabled = false;
                         }
                         _ => panic!("Unexpected state while reading communicator channel"),
                     }
@@ -135,11 +138,31 @@ impl eframe::App for RagnaroekApp {
                     self.comm_receiver = Some(connect_and_detect(self.comms_mode));
                 }
 
+                // If we're in the middle of PIT download, check if it's done
+                if self.pit_receiver.is_some() {
+                    let r = self.pit_receiver.as_mut().unwrap();
+                    match r.try_recv() {
+                        Ok(Ok(pit)) => {
+                            self.pit_receiver = None;
+                            self.interaction_enabled = true;
+                            self.rendering_pit = Some(pit);
+                        }
+                        // Error occurred while obtaining PIT
+                        Ok(Err(err)) => panic!("{:?}", err),
+                        // Nothing happened yet, keep waiting
+                        Err(TryRecvError::Empty) => {
+                            self.interaction_enabled = false;
+                        }
+                        _ => panic!("Unexpected state while reading PIT download channel"),
+                    }
+                }
+
                 // Print PIT from device
                 let print_pit_btn = egui::Button::new("Parse PIT from device");
                 if ui.add_enabled(self.comm.is_some(), print_pit_btn).clicked() {
-                    let conn = self.comm.as_mut().unwrap();
-                    self.rendering_pit = Some(pit_ui::download(conn));
+                    // Start thread in background for downloading PIT
+                    self.pit_receiver =
+                        Some(pit_ui::start_download(self.comm.clone().unwrap().clone()));
                 }
 
                 // Parse PIT from file
@@ -154,6 +177,7 @@ impl eframe::App for RagnaroekApp {
                         // Have path, set PIT to render
                         Ok(Some(path)) => {
                             self.pit_dialog_receiver = None;
+                            self.interaction_enabled = true;
                             let pit = fs::read(path).unwrap();
                             let pit = pit::Pit::deserialize(&pit).unwrap();
                             self.rendering_pit = Some(pit);
@@ -161,9 +185,12 @@ impl eframe::App for RagnaroekApp {
                         // User cancelled, we're done
                         Ok(None) => {
                             self.pit_dialog_receiver = None;
+                            self.interaction_enabled = true;
                         }
                         // Nothing happened yet, keep waiting
-                        Err(TryRecvError::Empty) => {}
+                        Err(TryRecvError::Empty) => {
+                            self.interaction_enabled = false;
+                        }
                         // Disconnection, shouldn't happen
                         Err(TryRecvError::Disconnected) => {
                             panic!("Disconnect");
@@ -179,6 +206,7 @@ impl eframe::App for RagnaroekApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            ui.set_enabled(self.interaction_enabled);
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
                     // Allow user to pick how to communicate with device
@@ -189,10 +217,7 @@ impl eframe::App for RagnaroekApp {
                         (CommsMode::NetConnect, "Net (Connect)"),
                     ] {
                         let rbtn = egui::RadioButton::new(self.comms_mode == mode, text);
-                        if ui
-                            .add_enabled(self.comms_mode_radio_enabled, rbtn)
-                            .clicked()
-                        {
+                        if ui.add_enabled(self.interaction_enabled, rbtn).clicked() {
                             self.comms_mode = mode;
                         }
                     }

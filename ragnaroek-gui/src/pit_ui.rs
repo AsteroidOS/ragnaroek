@@ -4,14 +4,24 @@ use pit;
 use ragnaroek;
 use rfd;
 
+use crate::SharedSession;
+use std::ops::DerefMut;
 use std::path::PathBuf;
 use std::sync::mpsc;
 use std::thread;
 
-pub fn download(c: &mut Box<dyn ragnaroek::Communicator>) -> pit::Pit {
-    ragnaroek::download_protocol::begin_session(c).unwrap();
-    let pit = ragnaroek::download_protocol::download_pit(c).unwrap();
-    return pit;
+/// Download PIT file from the device.
+/// Does not block.
+/// Instead, result is returned as a message on the returned channel when ready.
+pub fn start_download(s: SharedSession) -> mpsc::Receiver<ragnaroek::Result<pit::Pit>> {
+    let (send, recv) = mpsc::channel();
+    thread::spawn(move || {
+        let mut s_locked = s.lock().unwrap();
+        let s_locked = s_locked.deref_mut();
+        let pit = s_locked.download_pit();
+        send.send(pit).unwrap();
+    });
+    return recv;
 }
 
 /// Ask the user to pick a PIT file.
