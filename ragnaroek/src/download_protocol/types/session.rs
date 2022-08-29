@@ -46,6 +46,6 @@ impl Session {
 
 impl Drop for Session {
     fn drop(&mut self) {
-        end_session(&mut self.c, false);
+        end_session(&mut self.c, false).unwrap();
     }
 }

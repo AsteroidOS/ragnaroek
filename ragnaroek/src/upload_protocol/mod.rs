@@ -43,10 +43,12 @@ fn send_packet(c: &mut Box<dyn Communicator>, data: &[u8]) -> Result<()> {
 /// Dump the given memory range.
 pub fn dump(c: &mut Box<dyn Communicator>, start_addr: u64, end_addr: u64) -> Result<Vec<u8>> {
     unimplemented!();
+    /*
     handshake::handshake(c)?;
 
     let mut data: Vec<u8> = Vec::new();
 
     end_session::end_session(c)?;
     return Ok(data);
+    */
 }

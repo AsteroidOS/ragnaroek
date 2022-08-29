@@ -1,6 +1,6 @@
 use super::send_packet;
 use super::Bitness;
-use crate::{error::TransferError, Communicator, Error, Result};
+use crate::{Communicator, Result};
 
 const DATAXFER: &[u8] = &[b'D', b'a', b'T', b'a', b'X', b'f', b'E', b'r', b'\0'];
 const TRANSFER_MAX_SIZE: usize = 0x80000; // 512KiB
@@ -16,6 +16,7 @@ pub fn transfer(
     end_addr: u64,
 ) -> Result<Vec<u8>> {
     unimplemented!();
+    /*
     // TODO: Sanity checks
     // TODO: start_addr > end_addr
     // TODO: Bitness::ThirtyTwo && start_addr > u32::MAX
@@ -42,6 +43,7 @@ pub fn transfer(
         Err(e) => return Err(Error::TransferError(TransferError::IoError(e))),
         Ok(data) => return Ok(data),
     }
+    */
 }
 
 /// Transfer the requested chunk of memory.

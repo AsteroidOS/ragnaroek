@@ -49,7 +49,7 @@ impl ProbeTable {
         let (device_name, data) = read_string_and_advance(data, DEVICE_NAME_LEN);
 
         // Keep reading an unknown amount of entries
-        let mut data = data;
+        let data = data;
         let entries = match bitness {
             Bitness::ThirtyTwo => {
                 let (entries_32, _) = read_probe_entries_32_and_advance(data);
