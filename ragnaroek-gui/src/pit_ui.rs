@@ -67,7 +67,7 @@ pub fn draw_table(ui: &mut egui::Ui, pit: pit::Pit) {
     ];
     TableBuilder::new(ui)
         .resizable(true)
-        .columns(egui_extras::Size::remainder(), headings.len())
+        .columns(egui_extras::Column::remainder(), headings.len())
         .header(60.0, |mut header| {
             for heading in headings {
                 header.col(|ui| {

@@ -1,5 +1,6 @@
 //! This crate provides an egui-based graphical frontend for ragnaroek.
 
+mod log_ui;
 mod pit_ui;
 
 use eframe::egui::{self, RichText};

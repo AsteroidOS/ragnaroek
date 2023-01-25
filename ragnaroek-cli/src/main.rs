@@ -40,20 +40,20 @@ fn define_cli() -> ArgMatches {
         .long("transport")
         .short('t')
         .help("Choose how to communicate with the target. USB is even more experimental than everything else about ragnaroek.")
-        .possible_values(["net", "usb"])
+        .value_parser(["net", "usb"])
         .default_value("net");
     let reboot = Arg::new("reboot")
         .long("reboot")
         .short('r')
         .help("Choose whether to reboot target at the end.")
-        .possible_values(["false", "true"])
+        .value_parser(["false", "true"])
         .default_value("false");
     let output_format = Arg::new("output-format")
         .long("output-format")
         .short('o')
         .help("Specify which output format to use.")
-        .takes_value(true)
-        .possible_values(["human", "json"])
+        .num_args(1)
+        .value_parser(["human", "json"])
         .default_value("human")
         .required(false);
 
@@ -75,7 +75,7 @@ fn define_cli() -> ArgMatches {
             .long("pit-path")
             .short('p')
             .help("Specify which PIT file to use.")
-            .takes_value(true)
+            .value_parser(clap::value_parser!(bool))
             .required(true)
         )
         .arg(output_format.clone());
@@ -87,14 +87,14 @@ fn define_cli() -> ArgMatches {
         .short('p')
         .long("partition")
         .required(true)
-        .takes_value(true)
+        .num_args(1)
         .help("The partition to flash, as named in the device's PIT. Required. If unsure, you may want to run print-pit first.")
     )
     .arg(Arg::new("filename")
         .short('f')
         .long("filename")
         .required(true)
-        .takes_value(true)
+        .num_args(1)
         .help("The filename of the file containing the partition contents you want to flash. Required.")
     );
 
@@ -121,21 +121,21 @@ fn define_cli() -> ArgMatches {
                 .short('f')
                 .long("filename")
                 .required(true)
-                .takes_value(true)
+                .num_args(1)
                 .help("The filename of the file where the memory dump should be written to. Required.")
             )
             .arg(Arg::new("start-address")
                 .short('s')
                 .long("start-address")
                 .required(true)
-                .takes_value(true)
+                .num_args(1)
                 .help("Memory address the dump should start at (inclusive). Required.")
             )
             .arg(Arg::new("end-address")
                 .short('e')
                 .long("end-address")
                 .required(true)
-                .takes_value(true)
+                .num_args(1)
                 .help("Memory address the dump should end at (inclusive). Required.")
             )
         )
@@ -160,9 +160,9 @@ fn define_cli() -> ArgMatches {
 
 fn get_download_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>> {
     let transport = args
-        .value_of("transport")
+        .get_one::<String>("transport")
         .expect("Transport must have been set! This is probably clap bug.");
-    match transport {
+    match transport.as_str() {
         "usb" => {
             let conn = UsbConnection::establish()?;
             return Ok(Box::new(conn));
@@ -179,7 +179,7 @@ fn get_download_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>>
 fn detect(args: &ArgMatches) {
     let comm: Box<dyn Communicator> = get_download_communicator(args).unwrap();
     let sess = download_protocol::Session::begin(comm).unwrap();
-    let reboot: bool = args.value_of_t_or_exit("reboot");
+    let reboot: bool = *args.get_one::<bool>("reboot").unwrap();
     sess.end(reboot).unwrap();
 }
 
@@ -211,15 +211,15 @@ fn print_pit(args: &ArgMatches) {
     let pit = sess.download_pit().unwrap();
     pretty_print_pit(pit);
 
-    let reboot: bool = args.value_of_t_or_exit("reboot");
+    let reboot: bool = *args.get_one::<bool>("reboot").unwrap();
     sess.end(reboot).unwrap();
 }
 
 fn parse_pit(args: &ArgMatches) {
-    let path = args
-        .value_of("pit-path")
+    let path: &str = args
+        .get_one::<String>("pit-path")
         .expect("Required argument not set! This is probably a clap bug.");
-    let path = Path::new(path);
+    let path = Path::new(&path);
     let mut f = File::open(path).unwrap();
 
     let mut pit_data: Vec<u8> = Vec::new();
@@ -227,8 +227,8 @@ fn parse_pit(args: &ArgMatches) {
 
     let pit = pit::Pit::deserialize(&pit_data).unwrap();
 
-    let output_format = args
-        .value_of("output-format")
+    let output_format: &str = args
+        .get_one::<String>("output-format")
         .expect("Required argument not set! This is probably a clap bug.");
     match output_format {
         "human" => pretty_print_pit(pit),
@@ -246,31 +246,31 @@ fn flash(args: &ArgMatches) {
 
     // Find the PIT entry matching the partition to flash
     let pit = sess.download_pit().unwrap();
-    let partition_name: String = args.value_of_t_or_exit("partition");
+    let partition_name = args.get_one::<String>("partition").unwrap();
     let pit_entry = pit
         .get_entry_by_name(&partition_name)
         .expect("A partition by that name could not be found! Make sure it exists");
 
     // TODO: Do this in a more efficient way than loading everything into RAM
-    let path = args
-        .value_of("filename")
+    let path: &str = args
+        .get_one::<String>("filename")
         .expect("Required argument not set! This is probably a clap bug.");
-    let path = Path::new(path);
+    let path = Path::new(&path);
     let mut f = File::open(path).unwrap();
     let mut data: Vec<u8> = Vec::new();
     f.read_to_end(&mut data).unwrap();
 
     sess.flash(&data, pit_entry).unwrap();
 
-    let reboot: bool = args.value_of_t_or_exit("reboot");
+    let reboot: bool = *args.get_one::<bool>("reboot").unwrap();
     sess.end(reboot).unwrap();
 }
 
 fn get_upload_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>> {
     let transport = args
-        .value_of("transport")
+        .get_one::<String>("transport")
         .expect("Transport must have been set! This is probably clap bug.");
-    match transport {
+    match transport.as_str() {
         "usb" => {
             let conn = UsbConnection::establish()?;
             return Ok(Box::new(conn));
@@ -297,16 +297,16 @@ fn upload_mode_dump(args: &ArgMatches) {
 
     upload_protocol::handshake(&mut conn).unwrap();
 
-    let start_addr: u64 = args.value_of_t_or_exit("start-address");
-    let end_addr: u64 = args.value_of_t_or_exit("end-address");
+    let start_addr: u64 = *args.get_one::<u64>("start-address").unwrap();
+    let end_addr: u64 = *args.get_one::<u64>("end-address").unwrap();
     let data = upload_protocol::dump(&mut conn, start_addr, end_addr).unwrap();
 
     // Write to file
     // TODO: OS strings may be more appropriate here
     let path = args
-        .value_of("filename")
+        .get_one::<String>("filename")
         .expect("Required argument not set! This is probably a clap bug.");
-    let path = Path::new(path);
+    let path = Path::new(&path);
     let mut f = File::create(path).unwrap();
     f.write_all(&data).unwrap();
 
