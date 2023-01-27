@@ -130,7 +130,7 @@ pub(crate) fn begin_session(c: &mut Box<dyn Communicator>) -> Result<SessionPara
         max_seq_packets,
         max_seq_size_bytes: max_seq_packets * max_packet_size,
     };
-    println!("Session params: {:?}", params);
+    log::debug!("Session params: {:?}", params);
 
     return Ok(params);
 }

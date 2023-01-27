@@ -36,7 +36,7 @@ impl OdinCmdReply {
         let arg = OdinInt::from_wire(arg_buf);
 
         let reply = OdinCmdReply { cmd, arg };
-        log::trace!(target: "CMD REPLY", "{}", reply);
+        log::trace!(target: "CMD", "{}", reply);
         return Ok(reply);
     }
 }
