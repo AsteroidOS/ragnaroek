@@ -10,7 +10,7 @@ const VALID_PIDS: [u16; 3] = [0x6601, 0x685D, 0x68C3];
 /// USB class that the desired configuration has (USB communications device)
 const USB_CLASS_CDC_DATA: u8 = 0x0A;
 /// Default USB timeout in seconds
-const USB_DEFAULT_TIMEOUT: Duration = Duration::from_secs(200);
+const USB_DEFAULT_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// `Connection` implements a USB ODIN mode connection.
 pub struct Connection {
@@ -104,11 +104,11 @@ impl Communicator for Connection {
     /// Sends the given data to the device.
     /// Blocks until all data could be sent or an error occurs.
     fn send(&mut self, data: &[u8]) -> IOResult<()> {
+        log::trace!(target: "USB", "Send: {}", format_data_buf(data));
         self.handle
             .write_bulk(self.send_endpoint, data, USB_DEFAULT_TIMEOUT)
             .unwrap();
 
-        log::trace!(target: "USB", "Send: {}", format_data_buf(data));
         return Ok(());
     }
 
