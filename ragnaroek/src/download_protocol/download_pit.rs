@@ -64,7 +64,7 @@ fn fetch_pit_chunk(
     // Calculate which chunk index to use
     let chunk_idx: u32 = chunk_idx.try_into().unwrap();
     let chunk_idx: OdinInt = chunk_idx.into();
-    log::debug!(target: "PIT DL", "[Chunk {}] Fetching", chunk_idx);
+    log::debug!(target: "PIT DL", "[Chunk {}] Fetching part of remaining {} bytes", chunk_idx, total_remaining);
 
     // Send request
     let p = OdinCmdPacket::with_2_args(
@@ -86,8 +86,15 @@ fn fetch_pit_chunk(
 fn end_pit_download(c: &mut Box<dyn Communicator>) -> Result<()> {
     log::debug!(target: "PIT DL", "Ending PIT download");
 
-    // USB expects an empty bulk transfer after the last data chunk
+    // For whatever reason, if connected via USB the device really wants to send us an empty transfer
+    log::trace!(target: "PIT DL", "Receiving empty transfer");
+    c.recv_exact(0)?;
+    log::trace!(target: "PIT DL", "Receiving empty transfer OK");
+
+    // And the device expects an empty transfer from us
+    log::trace!(target: "PIT DL", "Sending empty transfer");
     c.send(&[])?;
+    log::trace!(target: "PIT DL", "Sending empty transfer OK");
 
     let p = OdinCmdPacket::with_1_arg(OdinCmd::TransferPIT, OdinInt::from(PIT_FLAG_END));
     p.send(c)?;
