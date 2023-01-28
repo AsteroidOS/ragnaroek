@@ -200,12 +200,14 @@ fn wait_for_device(args: &ArgMatches) {
 fn pretty_print_pit(pit: pit::Pit) {
     match pit.0 {
         either::Either::Left(pit) => {
+            println!("PIT version: 1");
             println!("Gang: {}", pit.gang_name);
             println!("Project: {}", pit.project_name);
             println!("Entries:");
             println!("{}", tabled::Table::new(pit).to_string());
         }
         either::Either::Right(pit) => {
+            println!("PIT version: 2");
             println!("Gang: {}", pit.gang_name);
             println!("Project: {}", pit.project_name);
             println!("Entries:");
