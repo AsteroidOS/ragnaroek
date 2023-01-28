@@ -271,13 +271,7 @@ fn flash(args: &ArgMatches) {
     let mut data: Vec<u8> = Vec::new();
     f.read_to_end(&mut data).unwrap();
 
-    sess.flash(
-        &data,
-        pit_entry
-            .left()
-            .expect("PIT V2 is currently unsupported for flashing"),
-    )
-    .unwrap();
+    sess.flash(&data, pit_entry).unwrap();
 
     let reboot: bool = *args.get_one::<bool>("reboot").unwrap();
     sess.end(reboot).unwrap();

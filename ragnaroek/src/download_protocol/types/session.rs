@@ -1,3 +1,4 @@
+use either::Either;
 use pit::*;
 
 use super::super::begin_session::*;
@@ -39,7 +40,7 @@ impl Session {
     }
 
     /// Flash a file to the target.
-    pub fn flash(&mut self, data: &[u8], pit_entry: PitEntry) -> Result<()> {
+    pub fn flash(&mut self, data: &[u8], pit_entry: Either<PitEntryV1, PitEntryV2>) -> Result<()> {
         return flash(&mut self.c, self.params, data, pit_entry);
     }
 }
