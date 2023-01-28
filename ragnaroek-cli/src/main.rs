@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
+#![allow(clippy::needless_return)]
 
 //! This crate implements the CLI for a flash tool for Samsung Odin-compatible devices.
 
@@ -78,7 +79,7 @@ fn define_cli() -> ArgMatches {
             .value_parser(clap::value_parser!(String))
             .required(true)
         )
-        .arg(output_format.clone());
+        .arg(output_format);
 
     let flash = Command::new("flash").about("Flash the given image to the given partition. Remember that flashing certain partitions incorrectly may brick your device!")
     .arg(transport.clone())
@@ -103,7 +104,7 @@ fn define_cli() -> ArgMatches {
             "Wait until a supported device is connected. Then return with a successful exit code.",
         )
         .arg(transport.clone())
-        .arg(reboot.clone());
+        .arg(reboot);
 
     // TODO: Add subcommands for displaying probe table etc.
     // TODO: Add support for specifying name of probe table memory range to dump
@@ -141,7 +142,7 @@ fn define_cli() -> ArgMatches {
         )
         .subcommand(Command::new("probe")
             .about("Dump the probe table to stdout. This is a listing of memory regions and their properties.")
-            .arg(transport.clone())
+            .arg(transport)
         );
 
     // Putting it all together
@@ -186,11 +187,8 @@ fn detect(args: &ArgMatches) {
 fn wait_for_device(args: &ArgMatches) {
     let _: Box<dyn Communicator>;
     loop {
-        match get_download_communicator(args) {
-            Ok(_) => {
-                break;
-            }
-            Err(_) => {}
+        if get_download_communicator(args).is_ok() {
+            break;
         }
     }
 
@@ -204,14 +202,14 @@ fn pretty_print_pit(pit: pit::Pit) {
             println!("Gang: {}", pit.gang_name);
             println!("Project: {}", pit.project_name);
             println!("Entries:");
-            println!("{}", tabled::Table::new(pit).to_string());
+            println!("{}", tabled::Table::new(pit));
         }
         either::Either::Right(pit) => {
             println!("PIT version: 2");
             println!("Gang: {}", pit.gang_name);
             println!("Project: {}", pit.project_name);
             println!("Entries:");
-            println!("{}", tabled::Table::new(pit).to_string());
+            println!("{}", tabled::Table::new(pit));
         }
     }
 }
@@ -259,7 +257,7 @@ fn flash(args: &ArgMatches) {
     let pit = sess.download_pit().unwrap();
     let partition_name = args.get_one::<String>("partition").unwrap();
     let pit_entry = pit
-        .get_entry_by_name(&partition_name)
+        .get_entry_by_name(partition_name)
         .expect("A partition by that name could not be found! Make sure it exists");
 
     // TODO: Do this in a more efficient way than loading everything into RAM
@@ -330,7 +328,7 @@ fn upload_mode_probe(args: &ArgMatches) {
     upload_protocol::handshake(&mut conn).unwrap();
 
     let table = upload_protocol::probe(&mut conn).unwrap();
-    println!("{:?}", table);
+    println!("{table:?}");
 
     upload_protocol::end_session(&mut conn).unwrap();
 }
