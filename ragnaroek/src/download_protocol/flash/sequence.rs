@@ -1,4 +1,5 @@
 use super::super::*;
+use super::PitEntry;
 use crate::download_protocol::begin_session::SessionParams;
 use crate::Communicator;
 use crate::Result;
@@ -82,6 +83,7 @@ pub fn end(
     let is_modem: bool = pit_entry.pit_type == PitType::Modem;
     let p: OdinCmdPacket;
     let device_type: u32 = pit_entry.pit_device_type.into();
+    let partition_id: u32 = pit_entry.partition_id;
     if is_modem {
         p = OdinCmdPacket::with_6_args(
             OdinCmd::Flash,
@@ -100,7 +102,7 @@ pub fn end(
             sequence_length_bytes,
             OdinInt::from(0x00),
             OdinInt::from(device_type),
-            OdinInt::from(pit_entry.pit_id),
+            OdinInt::from(partition_id),
             OdinInt::from(is_last_sequence),
         );
     }

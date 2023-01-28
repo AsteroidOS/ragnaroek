@@ -46,7 +46,7 @@ fn define_cli() -> ArgMatches {
         .long("reboot")
         .short('r')
         .help("Choose whether to reboot target at the end.")
-        .value_parser(["false", "true"])
+        .value_parser(clap::value_parser!(bool))
         .default_value("false");
     let output_format = Arg::new("output-format")
         .long("output-format")
@@ -75,7 +75,7 @@ fn define_cli() -> ArgMatches {
             .long("pit-path")
             .short('p')
             .help("Specify which PIT file to use.")
-            .value_parser(clap::value_parser!(bool))
+            .value_parser(clap::value_parser!(String))
             .required(true)
         )
         .arg(output_format.clone());
@@ -198,11 +198,20 @@ fn wait_for_device(args: &ArgMatches) {
 }
 
 fn pretty_print_pit(pit: pit::Pit) {
-    println!("Gang: {}", pit.gang_name);
-    println!("Project: {}", pit.project_name);
-    println!("Version: {}", pit.proto_version);
-    println!("Entries:");
-    println!("{}", tabled::Table::new(pit).to_string());
+    match pit.0 {
+        either::Either::Left(pit) => {
+            println!("Gang: {}", pit.gang_name);
+            println!("Project: {}", pit.project_name);
+            println!("Entries:");
+            println!("{}", tabled::Table::new(pit).to_string());
+        }
+        either::Either::Right(pit) => {
+            println!("Gang: {}", pit.gang_name);
+            println!("Project: {}", pit.project_name);
+            println!("Entries:");
+            println!("{}", tabled::Table::new(pit).to_string());
+        }
+    }
 }
 
 fn print_pit(args: &ArgMatches) {
@@ -260,7 +269,13 @@ fn flash(args: &ArgMatches) {
     let mut data: Vec<u8> = Vec::new();
     f.read_to_end(&mut data).unwrap();
 
-    sess.flash(&data, pit_entry).unwrap();
+    sess.flash(
+        &data,
+        pit_entry
+            .left()
+            .expect("PIT V2 is currently unsupported for flashing"),
+    )
+    .unwrap();
 
     let reboot: bool = *args.get_one::<bool>("reboot").unwrap();
     sess.end(reboot).unwrap();

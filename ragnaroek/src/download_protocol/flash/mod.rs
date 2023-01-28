@@ -5,7 +5,7 @@ use super::*;
 
 use crate::Communicator;
 use crate::Result;
-use pit::PitEntry;
+pub(crate) type PitEntry = pit::PitEntryV1;
 
 const FLASH_CMD_BEGIN_FLASH: u32 = 0x00;
 const SET_TOTAL_SIZE: u32 = 0x02;

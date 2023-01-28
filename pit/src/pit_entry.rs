@@ -1,4 +1,5 @@
 use core::fmt;
+use either::Either;
 
 #[cfg(feature = "tabled")]
 use tabled::Tabled;
@@ -7,14 +8,18 @@ use tabled::Tabled;
 use serde::Serialize;
 
 type PitIdentifier = u32;
+// TODO: Should be an enum, find values
+type PitPartitionType = u32;
+// TODO: Should be an enum, find values
+type PitFilesystem = u32;
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "tabled", derive(Tabled))]
 #[cfg_attr(feature = "serde", derive(Serialize))]
-pub struct PitEntry {
+pub struct PitEntryV1 {
     pub pit_type: PitType,
     pub pit_device_type: PitDeviceType,
-    pub pit_id: PitIdentifier,
+    pub partition_id: PitIdentifier,
     #[cfg_attr(feature = "tabled", tabled(display_with = "display_pit_attributes"))]
     pub pit_attributes: Vec<PitAttribute>,
     #[cfg_attr(
@@ -22,8 +27,26 @@ pub struct PitEntry {
         tabled(display_with = "display_pit_update_attributes")
     )]
     pub pit_update_attributes: Vec<PitUpdateAttribute>,
-    pub block_size_or_offset: u32,
+    pub block_size: u32,
     pub block_count: u32,
+    pub file_offset: u32,
+    pub file_size: u32,
+    pub partition_name: String,
+    pub flash_filename: String,
+    pub fota_filename: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "tabled", derive(Tabled))]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub struct PitEntryV2 {
+    pub pit_type: PitType,
+    pub pit_device_type: PitDeviceType,
+    pub partition_id: PitIdentifier,
+    pub partition_type: PitPartitionType,
+    pub pit_filesystem: PitFilesystem,
+    pub start_block: u32,
+    pub block_num: u32,
     pub file_offset: u32,
     pub file_size: u32,
     pub partition_name: String,

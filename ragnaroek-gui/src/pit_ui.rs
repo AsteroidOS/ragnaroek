@@ -45,19 +45,17 @@ pub fn draw_table(ui: &mut egui::Ui, pit: pit::Pit) {
     // Not part of table, but related
     ui.horizontal(|ui| {
         ui.heading("Gang Name: ");
-        ui.monospace(pit.gang_name.clone());
+        ui.monospace(pit.gang_name());
         ui.heading("Project Name: ");
-        ui.monospace(pit.project_name.clone());
-        ui.heading("Version: ");
-        ui.monospace(format!("{}", pit.proto_version));
+        ui.monospace(pit.project_name());
     });
     let headings = [
         "Type",
         "Device Type",
-        "ID",
+        "Partition ID",
         "Attributes",
         "Update Attributes",
-        "Block Size / Offset",
+        "Block Size",
         "Block Count",
         "File Offset",
         "File Size",
@@ -76,15 +74,19 @@ pub fn draw_table(ui: &mut egui::Ui, pit: pit::Pit) {
             }
         })
         .body(|mut body| {
-            for entry in pit {
+            for entry in pit
+                .0
+                .left()
+                .expect("Currently, only display of PIT v1 is supported")
+            {
                 body.row(25.0, |mut row| {
                     for text in [
                         format!("{}", entry.pit_type),
                         format!("{}", entry.pit_device_type),
-                        format!("{}", entry.pit_id),
+                        format!("{}", entry.partition_id),
                         format!("{:?}", entry.pit_attributes),
                         format!("{:?}", entry.pit_update_attributes),
-                        format!("{}", entry.block_size_or_offset),
+                        format!("{}", entry.block_size),
                         format!("{}", entry.block_count),
                         format!("{}", entry.file_offset),
                         format!("{}", entry.file_size),
