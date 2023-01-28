@@ -227,8 +227,6 @@ fn read_entry_v2(data: &[u8]) -> Result<(PitEntryV2, &[u8]), PitError> {
     let (block_num, data) = read_u32_and_advance(data)?;
     let (file_offset, data) = read_u32_and_advance(data)?;
     let (file_size, data) = read_u32_and_advance(data)?;
-    // FIXME: What did we miss to read?
-    let (_, data) = read_u32_and_advance(data)?;
     let partition_name = read_string_and_advance(data, PIT_STRING_MAX_LEN)?;
     let data = &data[32..];
     let flash_filename = read_string_and_advance(data, PIT_STRING_MAX_LEN)?;
