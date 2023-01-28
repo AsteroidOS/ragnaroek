@@ -37,19 +37,19 @@ impl Pit {
     pub fn deserialize(data: &[u8]) -> Result<Pit, PitError> {
         // Check whether magic is valid
         if data[0..=3] != PIT_MAGIC {
-            return Err(PitError::InvalidPit([data[0], data[1], data[2], data[3]]).into());
+            return Err(PitError::InvalidPit(data[0..=3].try_into().unwrap()));
         }
         let is_v2 = is_pit_v2(data);
         let data = &data[4..];
 
         // Parse global data
         let (num_entries, data) = read_u32_as_usize_and_advance(data)?;
-        let gang_name = read_string_and_advance(&data, 8)?;
+        let gang_name = read_string_and_advance(data, 8)?;
         let data = &data[8..];
-        let project_name = read_string_and_advance(&data, 8)?;
+        let project_name = read_string_and_advance(data, 8)?;
         let data = &data[8..];
         // The purpose of this value is not known
-        let (_, mut data) = read_u32_and_advance(&data)?;
+        let (_, mut data) = read_u32_and_advance(data)?;
 
         // Parse each entry
         if is_v2 {
@@ -88,7 +88,6 @@ impl Pit {
 
 fn read_u32_as_usize_and_advance(data: &[u8]) -> Result<(usize, &[u8]), PitError> {
     let (int, data) = read_u32_and_advance(data)?;
-    let int: u32 = int.into();
     let int: usize = int.try_into().unwrap();
     return Ok((int, data));
 }
@@ -107,7 +106,7 @@ fn read_u32_and_advance(data: &[u8]) -> Result<(u32, &[u8]), PitError> {
 fn read_string_and_advance(data: &[u8], max_len: usize) -> Result<String, PitError> {
     let data = &data[0..max_len];
     // C String constructor fails on seeing a NULL-byte; filter them out
-    let data: Vec<u8> = data.iter().take_while(|x| **x != 0).map(|x| *x).collect();
+    let data: Vec<u8> = data.iter().take_while(|x| **x != 0).copied().collect();
     let c_str = CString::new(data).unwrap();
     let s = c_str.into_string().unwrap();
     return Ok(s);
@@ -118,7 +117,7 @@ fn read_pit_type_and_advance(data: &[u8]) -> Result<(PitType, &[u8]), PitError> 
     let pit_type = match pit_type {
         0x00 => PitType::Other,
         0x01 => PitType::Modem,
-        _ => return Err(PitError::InvalidBinaryType(pit_type).into()),
+        _ => return Err(PitError::InvalidBinaryType(pit_type)),
     };
     return Ok((pit_type, data));
 }
@@ -135,14 +134,13 @@ fn read_pit_device_type_and_advance(data: &[u8]) -> Result<(PitDeviceType, &[u8]
         0x06 => Nor,
         0x07 => NandWB1,
         0x08 => Ufs,
-        _ => return Err(PitError::InvalidDeviceType(pit_device_type).into()),
+        _ => return Err(PitError::InvalidDeviceType(pit_device_type)),
     };
     return Ok((pit_device_type, data));
 }
 
 fn read_pit_attrs_and_advance(data: &[u8]) -> Result<(Vec<PitAttribute>, &[u8]), PitError> {
     let (pit_attributes_raw, data) = read_u32_and_advance(data)?;
-    let pit_attributes_raw: u32 = pit_attributes_raw.into();
     let mut pit_attributes: Vec<PitAttribute> = Vec::new();
     if (pit_attributes_raw & PIT_ATTRIBUTE_WRITE) != 0 {
         pit_attributes.push(PitAttribute::Write);
@@ -160,7 +158,6 @@ fn read_pit_update_attrs_and_advance(
     data: &[u8],
 ) -> Result<(Vec<PitUpdateAttribute>, &[u8]), PitError> {
     let (pit_update_attributes_raw, data) = read_u32_and_advance(data)?;
-    let pit_update_attributes_raw: u32 = pit_update_attributes_raw.into();
     let mut pit_update_attributes: Vec<PitUpdateAttribute> = Vec::new();
     if (pit_update_attributes_raw & PIT_UPDATE_ATTRIBUTE_FOTA) != 0 {
         pit_update_attributes.push(PitUpdateAttribute::Fota);

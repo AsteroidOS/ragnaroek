@@ -1,6 +1,8 @@
 //! This crate implements deserialization/serialization (TODO)
 //! for the Samsung PIT partition file format.
 
+#![allow(clippy::needless_return)]
+
 mod deserialize;
 #[cfg(test)]
 mod deserialize_test;
@@ -93,19 +95,14 @@ impl Iterator for PitV1 {
         }
 
         let next = self.entries[self.idx].clone();
-        self.idx = self.idx + 1;
+        self.idx += 1;
         return Some(next);
     }
 }
 
 impl PitV1 {
     pub fn get_entry_by_name(&self, name: &str) -> Option<PitEntryV1> {
-        for e in self.clone().into_iter() {
-            if e.partition_name == name {
-                return Some(e);
-            }
-        }
-        return None;
+        return self.clone().find(|e| e.partition_name == name);
     }
 }
 
@@ -131,18 +128,13 @@ impl Iterator for PitV2 {
         }
 
         let next = self.entries[self.idx].clone();
-        self.idx = self.idx + 1;
+        self.idx += 1;
         return Some(next);
     }
 }
 
 impl PitV2 {
     pub fn get_entry_by_name(&self, name: &str) -> Option<PitEntryV2> {
-        for e in self.clone().into_iter() {
-            if e.partition_name == name {
-                return Some(e);
-            }
-        }
-        return None;
+        return self.clone().into_iter().find(|e| e.partition_name == name);
     }
 }

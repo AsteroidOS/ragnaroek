@@ -1,5 +1,4 @@
 use core::fmt;
-use either::Either;
 
 #[cfg(feature = "tabled")]
 use tabled::Tabled;
@@ -119,10 +118,10 @@ impl fmt::Display for PitDeviceType {
     }
 }
 
-impl Into<u32> for PitDeviceType {
-    fn into(self) -> u32 {
+impl From<PitDeviceType> for u32 {
+    fn from(val: PitDeviceType) -> u32 {
         use PitDeviceType::*;
-        match self {
+        match val {
             Nand => 0x01,
             Emmc => 0x02,
             Spi => 0x03,
