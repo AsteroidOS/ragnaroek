@@ -30,13 +30,27 @@ pub fn initiate(c: &mut Box<dyn Communicator>, len: u32) -> Result<()> {
     return Ok(());
 }
 
-/// Send a packet of the file sequence to the target.
+/// Send a part of the file sequence to the target.
 ///
 /// `data` should be no larger than the maximum negotiated packet size. However, that is not checked by this
 /// function to allow for more flexible (ab)use.
-fn send_packet(c: &mut Box<dyn Communicator>, packet: &[u8], packet_idx: OdinInt) -> Result<()> {
-    log::trace!(target: "FLASH", "[Packet {}] Transferring {} bytes", packet_idx, packet.len());
-    c.send(packet)?;
+fn send_part(
+    c: &mut Box<dyn Communicator>,
+    file_part: &[u8],
+    file_part_idx: OdinInt,
+    is_last_part: bool,
+) -> Result<()> {
+    // This is not documented by samsung-loki, but Heimdall does this
+    // TODO: Contribute doc, in case this turns out to be correct
+    if is_last_part {
+        log::trace!(target: "FLASH", "[File part {}] Last part, not sending empty packet before data", file_part_idx);
+    } else {
+        log::trace!(target: "FLASH", "[File part {}] Sending empty packet before data", file_part_idx);
+        c.send(&[])?;
+    }
+
+    log::trace!(target: "FLASH", "[File part {}] Transferring {} bytes", file_part_idx, file_part.len());
+    c.send(file_part)?;
 
     let resp = OdinCmdReply::read(c)?;
     if resp.cmd != OdinCmd::ChunkTransferOk {
@@ -45,11 +59,11 @@ fn send_packet(c: &mut Box<dyn Communicator>, packet: &[u8], packet_idx: OdinInt
         );
     }
 
-    if resp.arg != packet_idx {
-        return Err(DownloadProtocolError::UnexpectedFlashPacket(packet_idx, resp.arg).into());
+    if resp.arg != file_part_idx {
+        return Err(DownloadProtocolError::UnexpectedFlashPacket(file_part_idx, resp.arg).into());
     }
 
-    log::trace!(target: "FLASH", "[Packet {}] OK", packet_idx);
+    log::trace!(target: "FLASH", "[File part {}] OK", file_part_idx);
 
     return Ok(());
 }
@@ -59,17 +73,18 @@ fn send_packet(c: &mut Box<dyn Communicator>, packet: &[u8], packet_idx: OdinInt
 /// This should be called once per sequence, after `initiate`.
 pub fn transfer(
     c: &mut Box<dyn Communicator>,
-    max_packet_size: usize,
+    max_file_part_size: usize,
     sequence: &[u8],
 ) -> Result<()> {
-    let total_packets = div_up(
+    let total_parts = div_up(
         OdinInt::from(sequence.len() as u32),
-        OdinInt::from(max_packet_size as u32),
+        OdinInt::from(max_file_part_size as u32),
     );
-    log::debug!(target: "FLASH", "Total of packets in sequence: {}", total_packets);
-    for (packet_idx, packet) in sequence.chunks(max_packet_size).enumerate() {
-        let packet_idx: u32 = packet_idx.try_into().unwrap();
-        send_packet(c, packet, OdinInt::from(packet_idx))?;
+    log::debug!(target: "FLASH", "Total number of file parts in sequence: {}", total_parts);
+    for (part_idx, part) in sequence.chunks(max_file_part_size).enumerate() {
+        let part_idx: u32 = part_idx.try_into().unwrap();
+        let is_last_part = (total_parts.inner - 1) == part_idx;
+        send_part(c, part, OdinInt::from(part_idx), is_last_part)?;
     }
     return Ok(());
 }
