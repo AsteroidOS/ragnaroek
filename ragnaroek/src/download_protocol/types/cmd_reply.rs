@@ -43,6 +43,6 @@ impl OdinCmdReply {
 
 impl fmt::Display for OdinCmdReply {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Cmd: {:?}, Arg: 0x{:X}", self.cmd, self.arg)
+        write!(f, "Cmd reply: {:?}, Arg: 0x{:X}", self.cmd, self.arg)
     }
 }
