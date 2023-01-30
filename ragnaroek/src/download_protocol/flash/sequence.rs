@@ -1,5 +1,4 @@
 use super::super::*;
-use crate::download_protocol::begin_session::SessionParams;
 use crate::Communicator;
 use crate::Result;
 use either::Either;
