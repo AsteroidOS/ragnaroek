@@ -124,7 +124,26 @@ impl Communicator for Connection {
             Err(e) => panic!("{}", e),
         }
 
-        log::trace!(target: "USB", "Recv: {}", format_data_buf(&buf));
+        log::trace!(target: "USB", "Recv blocking: {}", format_data_buf(&buf));
+        return Ok(buf);
+    }
+
+    fn recv(&mut self) -> IOResult<Vec<u8>> {
+        let mut buf = vec![];
+        // TODO: Figure out max size properly
+        buf.resize(1024 * 1024, 0);
+        match self
+            .handle
+            .read_bulk(self.recv_endpoint, &mut buf, Duration::from_millis(1))
+        {
+            Ok(read) => buf.resize(read, 0),
+            // Timeout is used as a hack to not block if there's no data to read
+            Err(rusb::Error::Timeout) => buf.resize(0, 0),
+            // FIXME: Turn into an I/O error somehow
+            Err(e) => panic!("{}", e),
+        }
+
+        log::trace!(target: "USB", "Recv nonblocking: {}", format_data_buf(&buf));
         return Ok(buf);
     }
 }

@@ -18,6 +18,9 @@ pub trait Communicator: Send {
     /// Receive exactly the specified amount of data from the device.
     /// Blocks until that much data could be collected or an error occurs.
     fn recv_exact(&mut self, how_much: usize) -> Result<Vec<u8>>;
+    /// Receive however much data is waiting to be read. Returned data may be empty.
+    /// Does not block.
+    fn recv(&mut self) -> Result<Vec<u8>>;
 }
 
 /// Helper feature for debug logging

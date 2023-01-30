@@ -6,7 +6,7 @@
 
 use std::{
     fs::File,
-    io::{Read, Write},
+    io::{stdin, Read, Write},
     path::Path,
 };
 
@@ -30,6 +30,7 @@ fn main() {
         Some(("print-pit", sub_args)) => print_pit(sub_args),
         Some(("parse-pit", sub_args)) => parse_pit(sub_args),
         Some(("flash", sub_args)) => flash(sub_args),
+        Some(("shell", sub_args)) => shell(sub_args),
         Some(("upload-mode", sub_args)) => upload_mode(sub_args),
         _ => panic!("Unexpected missing subcommand! This should've been caught by clap."),
     }
@@ -106,6 +107,13 @@ fn define_cli() -> ArgMatches {
         .arg(transport.clone())
         .arg(reboot);
 
+    let shell = Command::new("shell")
+        .about(
+            "Enter an interactive shell session with the bootloader.
+            See https://samsung-loki.github.io/samsung-docs/docs/Odin/Commands/ for details.",
+        )
+        .arg(transport.clone());
+
     // TODO: Add subcommands for displaying probe table etc.
     // TODO: Add support for specifying name of probe table memory range to dump
     // TODO: This is getting pretty hefty. Consider moving out of here.
@@ -154,6 +162,7 @@ fn define_cli() -> ArgMatches {
             print_pit,
             parse_pit,
             flash,
+            shell,
             upload_mode,
         ])
         .get_matches();
@@ -273,6 +282,47 @@ fn flash(args: &ArgMatches) {
 
     let reboot: bool = *args.get_one::<bool>("reboot").unwrap();
     sess.end(reboot).unwrap();
+}
+
+// TODO: DRY
+fn get_shell_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>> {
+    let transport = args
+        .get_one::<String>("transport")
+        .expect("Transport must have been set! This is probably clap bug.");
+    match transport.as_str() {
+        "usb" => {
+            let conn = UsbConnection::establish()?;
+            return Ok(Box::new(conn));
+        }
+        "net" => {
+            let conn = NetConnectConnection::new(WIRELESS_TARGET_IP, WIRELESS_PORT);
+            return Ok(Box::new(conn));
+        }
+        _ => panic!("Unexpected invalid transport! This should've been caught by clap."),
+    }
+}
+
+fn shell(args: &ArgMatches) {
+    println!("Waiting for target...");
+    let mut conn: Box<dyn Communicator> = get_shell_communicator(args).unwrap();
+    println!("Target connected!");
+    println!("Press Ctrl-C to quit");
+    loop {
+        print!(">");
+        std::io::stdout().flush().unwrap();
+
+        let cmd = stdin()
+            .lines()
+            .next()
+            .expect("Could not get next stdin line! This is a bug.")
+            .expect("Command was not valid UTF-8");
+        let resp = shell::exchange_cmd(&mut conn, &cmd).expect("Command execution failed!");
+        match resp {
+            Some(resp) => print!("\n{resp}\n"),
+            None => print!("\n<Target sent an empty reply>\n"),
+        }
+        std::io::stdout().flush().unwrap();
+    }
 }
 
 fn get_upload_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>> {

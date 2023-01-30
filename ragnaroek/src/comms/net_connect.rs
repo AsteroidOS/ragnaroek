@@ -34,4 +34,11 @@ impl Communicator for Connection {
         log::trace!(target: "NET", "Recv: {}",format_data_buf(&buf));
         return Ok(buf);
     }
+
+    fn recv(&mut self) -> IOResult<Vec<u8>> {
+        let mut buf = vec![];
+        self.s.read(&mut buf)?;
+        log::trace!(target: "NET", "Recv nonblocking: {}", format_data_buf(&buf));
+        return Ok(buf);
+    }
 }

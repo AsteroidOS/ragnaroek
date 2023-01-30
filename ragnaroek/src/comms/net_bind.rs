@@ -48,7 +48,14 @@ impl Communicator for Connection {
         buf.resize(how_much, 0);
         self.s.read_exact(&mut buf)?;
 
-        log::trace!(target: "NET", "Recv: {}", format_data_buf(&buf));
+        log::trace!(target: "NET", "Recv exact: {}", format_data_buf(&buf));
+        return Ok(buf);
+    }
+
+    fn recv(&mut self) -> Result<Vec<u8>> {
+        let mut buf = vec![];
+        self.s.read(&mut buf)?;
+        log::trace!(target: "NET", "Recv nonblocking: {}", format_data_buf(&buf));
         return Ok(buf);
     }
 }

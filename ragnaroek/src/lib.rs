@@ -10,6 +10,7 @@
 mod comms;
 pub mod download_protocol;
 mod error;
+pub mod shell;
 pub mod upload_protocol;
 
 pub use comms::net_bind::Connection as NetBindConnection;
