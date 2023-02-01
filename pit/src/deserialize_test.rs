@@ -8,6 +8,8 @@ const PIT_PATH: &str = "./testdata/";
 #[test_case("GT-I8190.pit" ; "GT-I8190.pit")]
 #[test_case("GT-I9500.pit" ; "GT-I9500.pit")]
 #[test_case("GT-I9505.pit" ; "GT-I9505.pit")]
+#[test_case("I9000_s1_odin_20100512.pit" ; "I9000_s1_odin_20100512.pit")]
+#[test_case("I9000_s1_odin_20100803.pit" ; "I9000_s1_odin_20100803.pit")]
 #[test_case("PICASSO3_EUR_OPEN.pit" ; "PICASSO3_EUR_OPEN.pit")]
 #[test_case("SCH-I545.pit" ; "SCH-I545.pit")]
 #[test_case("SGH-I317.pit" ; "SGH-I317.pit")]

@@ -92,8 +92,9 @@ impl fmt::Display for PitType {
 #[cfg_attr(feature = "tabled", derive(Tabled))]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum PitDeviceType {
+    OneNand = 0x00,
     Nand = 0x01,
-    Emmc = 0x02,
+    EmmcOrMoviNand = 0x02,
     Spi = 0x03,
     Ide = 0x04,
     NandX16 = 0x05,
@@ -106,8 +107,9 @@ impl fmt::Display for PitDeviceType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use PitDeviceType::*;
         match self {
+            OneNand => write!(f, "ONENAND"),
             Nand => write!(f, "NAND"),
-            Emmc => write!(f, "EMMC"),
+            EmmcOrMoviNand => write!(f, "EMMC/MOVINAND"),
             Spi => write!(f, "SPI"),
             Ide => write!(f, "IDE"),
             NandX16 => write!(f, "NANDX16"),
@@ -122,14 +124,34 @@ impl From<PitDeviceType> for u32 {
     fn from(val: PitDeviceType) -> u32 {
         use PitDeviceType::*;
         match val {
+            OneNand => 0x00,
             Nand => 0x01,
-            Emmc => 0x02,
+            EmmcOrMoviNand => 0x02,
             Spi => 0x03,
             Ide => 0x04,
             NandX16 => 0x05,
             Nor => 0x06,
             NandWB1 => 0x07,
             Ufs => 0x08,
+        }
+    }
+}
+
+impl TryFrom<u32> for PitDeviceType {
+    type Error = ();
+    fn try_from(val: u32) -> Result<PitDeviceType, Self::Error> {
+        use PitDeviceType::*;
+        match val {
+            0x00 => Ok(OneNand),
+            0x01 => Ok(Nand),
+            0x02 => Ok(EmmcOrMoviNand),
+            0x03 => Ok(Spi),
+            0x04 => Ok(Ide),
+            0x05 => Ok(NandX16),
+            0x06 => Ok(Nor),
+            0x07 => Ok(NandWB1),
+            0x08 => Ok(Ufs),
+            _ => Err(()),
         }
     }
 }

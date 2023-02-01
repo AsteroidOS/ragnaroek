@@ -124,19 +124,10 @@ fn read_pit_type_and_advance(data: &[u8]) -> Result<(PitType, &[u8]), PitError> 
 
 fn read_pit_device_type_and_advance(data: &[u8]) -> Result<(PitDeviceType, &[u8]), PitError> {
     let (pit_device_type, data) = read_u32_and_advance(data)?;
-    use PitDeviceType::*;
-    let pit_device_type = match pit_device_type {
-        0x01 => Nand,
-        0x02 => Emmc,
-        0x03 => Spi,
-        0x04 => Ide,
-        0x05 => NandX16,
-        0x06 => Nor,
-        0x07 => NandWB1,
-        0x08 => Ufs,
-        _ => return Err(PitError::InvalidDeviceType(pit_device_type)),
+    match PitDeviceType::try_from(pit_device_type) {
+        Ok(pit_device_type) => return Ok((pit_device_type, data)),
+        Err(_) => return Err(PitError::InvalidDeviceType(pit_device_type)),
     };
-    return Ok((pit_device_type, data));
 }
 
 fn read_pit_attrs_and_advance(data: &[u8]) -> Result<(Vec<PitAttribute>, &[u8]), PitError> {
