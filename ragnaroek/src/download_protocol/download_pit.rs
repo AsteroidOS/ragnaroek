@@ -31,8 +31,9 @@ pub(crate) fn download_pit(c: &mut Box<dyn Communicator>, p: SessionParams) -> R
         chunk_idx += 1;
     }
 
-    let is_proto_v1: bool = p.proto_version == ProtoVersion::V1;
-    end_pit_download(c, is_proto_v1)?;
+    let is_proto_v3plus: bool =
+        p.proto_version == ProtoVersion::V3 || p.proto_version == ProtoVersion::V4;
+    end_pit_download(c, is_proto_v3plus)?;
     log::info!(target: "PIT", "PIT download OK");
 
     return Ok(Pit::deserialize(&data)?);
@@ -85,13 +86,13 @@ fn fetch_pit_chunk(
 
 /// Tells the target that the PIT transfer is over and checks for an appropriate target response.
 /// The effects of calling this without initiating a transfer or in the middle of one are unknown.
-fn end_pit_download(c: &mut Box<dyn Communicator>, is_proto_v1: bool) -> Result<()> {
+fn end_pit_download(c: &mut Box<dyn Communicator>, is_proto_v3plus: bool) -> Result<()> {
     log::debug!(target: "PIT", "Ending PIT download");
 
     // For whatever reason, if connected via USB the device really wants to send us an empty transfer
-    // NOTE: Some protocol versions require these empty transfers, whether it's version 1 exactly is a guess.
-    if is_proto_v1 {
-        log::debug!(target: "PIT", "Protocol version 1, exchanging empty transfers");
+    // NOTE: Some protocol versions require these empty transfers, whether it's version 3 exactly is a guess.
+    if is_proto_v3plus {
+        log::debug!(target: "PIT", "Protocol version >3, exchanging empty transfers");
         log::trace!(target: "PIT", "Receiving empty transfer");
         c.recv_exact(0)?;
         log::trace!(target: "PIT", "Receiving empty transfer OK");
@@ -101,7 +102,7 @@ fn end_pit_download(c: &mut Box<dyn Communicator>, is_proto_v1: bool) -> Result<
         c.send(&[])?;
         log::trace!(target: "PIT", "Sending empty transfer OK");
     } else {
-        log::debug!(target: "PIT", "Protocol version > 1, not exchanging empty transfers");
+        log::debug!(target: "PIT", "Protocol version < 3, not exchanging empty transfers");
     }
 
     let p = OdinCmdPacket::with_1_arg(OdinCmd::TransferPIT, OdinInt::from(PIT_FLAG_END));
