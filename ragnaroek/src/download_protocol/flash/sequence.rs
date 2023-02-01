@@ -41,12 +41,14 @@ fn send_part(
 ) -> Result<()> {
     // This is not documented by samsung-loki, but Heimdall does this
     // TODO: Contribute doc, in case this turns out to be correct
+    /*)
     if is_last_part {
         log::trace!(target: "FLASH", "[File part {}] Last part, not sending empty packet before data", file_part_idx);
     } else {
         log::trace!(target: "FLASH", "[File part {}] Sending empty packet before data", file_part_idx);
         c.send(&[])?;
     }
+    */
 
     log::trace!(target: "FLASH", "[File part {}] Transferring {} bytes", file_part_idx, file_part.len());
     c.send(file_part)?;
@@ -83,7 +85,14 @@ pub fn transfer(
     for (part_idx, part) in sequence.chunks(max_file_part_size).enumerate() {
         let part_idx: u32 = part_idx.try_into().unwrap();
         let is_last_part = (total_parts.inner - 1) == part_idx;
-        send_part(c, part, OdinInt::from(part_idx), is_last_part)?;
+        // Last part might have to be padded for this to work
+        if is_last_part {
+            let mut part: Vec<u8> = Vec::from(part);
+            part.resize(max_file_part_size, 0);
+            send_part(c, &part, OdinInt::from(part_idx), is_last_part)?;
+        } else {
+            send_part(c, part, OdinInt::from(part_idx), is_last_part)?;
+        }
     }
     return Ok(());
 }
@@ -143,14 +152,18 @@ pub fn end(
             OdinInt::from(is_last_sequence),
         );
     }
+
     log::trace!(target: "FLASH", "Sending end-of-transfer command");
     p.send(c)?;
     log::trace!(target: "FLASH", "Sending end-of-transfer command OK");
 
     // For USB, an empty bulk transfer is expected after end
+    // NOTE: Does not appear to be needed for the S3 and S4, are there any devices that need this?
+    /*
     log::trace!(target: "FLASH", "Sending empty transfer after");
     c.send(&[])?;
     log::trace!(target: "FLASH", "Empty transfer OK");
+    */
 
     let resp = OdinCmdReply::read(c)?;
     if resp.cmd != OdinCmd::Flash {

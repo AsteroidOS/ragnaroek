@@ -89,8 +89,8 @@ fn end_pit_download(c: &mut Box<dyn Communicator>, is_proto_v1: bool) -> Result<
     log::debug!(target: "PIT", "Ending PIT download");
 
     // For whatever reason, if connected via USB the device really wants to send us an empty transfer
-    // NOTE: Some protocol versions require these empty transfers, but I think version 1 doesn't and causes a hang.
-    if !is_proto_v1 {
+    // NOTE: Some protocol versions require these empty transfers, whether it's version 1 exactly is a guess.
+    if is_proto_v1 {
         log::debug!(target: "PIT", "Protocol version 1, exchanging empty transfers");
         log::trace!(target: "PIT", "Receiving empty transfer");
         c.recv_exact(0)?;
