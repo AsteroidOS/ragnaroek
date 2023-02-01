@@ -191,7 +191,7 @@ fn parse_reboot_option(args: &ArgMatches) -> ActionAfter {
         .get_one::<String>("reboot")
         .expect("Reboot must have been set! This is probably clap bug.");
     match reboot.as_str() {
-        "nothing" => ActionAfter::Nothing,
+        "none" => ActionAfter::Nothing,
         "os" => ActionAfter::RebootOS,
         "odin" => ActionAfter::RebootOdin,
         "shutdown" => ActionAfter::Shutdown,
