@@ -10,7 +10,7 @@ use std::{
     path::Path,
 };
 
-use ragnaroek::*;
+use ragnaroek::{download_protocol::ActionAfter, *};
 
 use clap::{Arg, ArgMatches, Command};
 use pit::*;
@@ -47,9 +47,9 @@ fn define_cli() -> ArgMatches {
     let reboot = Arg::new("reboot")
         .long("reboot")
         .short('r')
-        .help("Choose whether to reboot target at the end.")
-        .value_parser(clap::value_parser!(bool))
-        .default_value("false");
+        .help("Choose which mode to reboot target into at the end. Older bootloader versions don't support all of these.")
+        .value_parser(["os", "odin", "shutdown", "none"])
+        .default_value("none");
     let output_format = Arg::new("output-format")
         .long("output-format")
         .short('o')
@@ -186,10 +186,23 @@ fn get_download_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>>
     }
 }
 
+fn parse_reboot_option(args: &ArgMatches) -> ActionAfter {
+    let reboot = args
+        .get_one::<String>("reboot")
+        .expect("Reboot must have been set! This is probably clap bug.");
+    match reboot.as_str() {
+        "nothing" => ActionAfter::Nothing,
+        "os" => ActionAfter::RebootOS,
+        "odin" => ActionAfter::RebootOdin,
+        "shutdown" => ActionAfter::Shutdown,
+        _ => panic!("Unknown ActionAfter! This should've been caught by clap."),
+    }
+}
+
 fn detect(args: &ArgMatches) {
     let comm: Box<dyn Communicator> = get_download_communicator(args).unwrap();
     let sess = download_protocol::Session::begin(comm).unwrap();
-    let reboot: bool = *args.get_one::<bool>("reboot").unwrap();
+    let reboot = parse_reboot_option(args);
     sess.end(reboot).unwrap();
 }
 
@@ -226,10 +239,10 @@ fn pretty_print_pit(pit: pit::Pit) {
 fn print_pit(args: &ArgMatches) {
     let comm: Box<dyn Communicator> = get_download_communicator(args).unwrap();
     let mut sess = download_protocol::Session::begin(comm).unwrap();
-    let pit = sess.download_pit().unwrap();
+    let pit = sess.download_pit(sess.params).unwrap();
     pretty_print_pit(pit);
 
-    let reboot: bool = *args.get_one::<bool>("reboot").unwrap();
+    let reboot = parse_reboot_option(args);
     sess.end(reboot).unwrap();
 }
 
@@ -263,7 +276,7 @@ fn flash(args: &ArgMatches) {
     let mut sess = download_protocol::Session::begin(comm).unwrap();
 
     // Find the PIT entry matching the partition to flash
-    let pit = sess.download_pit().unwrap();
+    let pit = sess.download_pit(sess.params).unwrap();
     let partition_name = args.get_one::<String>("partition").unwrap();
     let pit_entry = pit
         .get_entry_by_name(partition_name)
@@ -280,7 +293,7 @@ fn flash(args: &ArgMatches) {
 
     sess.flash(&data, pit_entry).unwrap();
 
-    let reboot: bool = *args.get_one::<bool>("reboot").unwrap();
+    let reboot = parse_reboot_option(args);
     sess.end(reboot).unwrap();
 }
 

@@ -18,7 +18,7 @@ pub fn start_download(s: SharedSession) -> mpsc::Receiver<ragnaroek::Result<pit:
     thread::spawn(move || {
         let mut s_locked = s.lock().unwrap();
         let s_locked = s_locked.deref_mut();
-        let pit = s_locked.download_pit();
+        let pit = s_locked.download_pit(s_locked.params);
         send.send(pit).unwrap();
     });
     return recv;
