@@ -21,6 +21,7 @@ const MAX_PROTO_VERSION: u32 = 0x04;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ProtoVersion {
     V1,
+    V2,
     V3,
     V4,
 }
@@ -115,6 +116,7 @@ fn determine_version_and_compression(
 
     match bl_version {
         1 => return Ok((ProtoVersion::V1, supports_compression)),
+        2 => return Ok((ProtoVersion::V2, supports_compression)),
         3 => return Ok((ProtoVersion::V3, supports_compression)),
         4 => return Ok((ProtoVersion::V4, supports_compression)),
         _ => return Err(DownloadProtocolError::UnknownProtoVersion(bl_version.into()).into()),
