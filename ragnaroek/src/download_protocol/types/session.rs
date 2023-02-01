@@ -3,6 +3,7 @@ use pit::*;
 
 use super::super::begin_session::*;
 use super::super::download_pit::*;
+pub use super::super::end_session::ActionAfter;
 use super::super::end_session::*;
 use super::super::flash::*;
 use super::super::magic_handshake::*;
@@ -13,7 +14,8 @@ use crate::Result;
 /// Manages the communications lifecycle with the target for the download protocol.
 pub struct Session {
     c: Box<dyn Communicator>,
-    params: SessionParams,
+    /// Session parameters, such as sizes of various transfers and the protocol version.
+    pub params: SessionParams,
 }
 
 // The actual logic is much too complex to include it here.
@@ -29,14 +31,14 @@ impl Session {
     }
 
     /// End the `Session` and do cleanup.
-    pub fn end(mut self, reboot: bool) -> Result<()> {
-        end_session(&mut self.c, reboot)?;
+    pub fn end(mut self, after: ActionAfter) -> Result<()> {
+        end_session(&mut self.c, after)?;
         return Ok(());
     }
 
     /// Download partitioning data from the target.
-    pub fn download_pit(&mut self) -> Result<Pit> {
-        return download_pit(&mut self.c);
+    pub fn download_pit(&mut self, p: SessionParams) -> Result<Pit> {
+        return download_pit(&mut self.c, p);
     }
 
     /// Flash a file to the target.
@@ -47,6 +49,6 @@ impl Session {
 
 impl Drop for Session {
     fn drop(&mut self) {
-        end_session(&mut self.c, false).unwrap();
+        end_session(&mut self.c, ActionAfter::Nothing).unwrap();
     }
 }

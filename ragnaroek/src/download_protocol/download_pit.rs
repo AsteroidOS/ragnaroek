@@ -1,5 +1,6 @@
 use super::*;
 
+use crate::download_protocol::begin_session::{ProtoVersion, SessionParams};
 use crate::Communicator;
 use crate::Result;
 
