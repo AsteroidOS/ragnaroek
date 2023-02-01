@@ -15,7 +15,7 @@ const V2PLUS_MAX_SEQ_PARTS: u32 = 30;
 /// Maximum size of a single packet in a flashing sequence for protocol version >1.
 const V2PLUS_MAX_FILE_PART_SIZE: u32 = 1 * 1024 * 1024; // 1MiB
 /// Highest protocol version we support.
-const MAX_PROTO_VERSION: u32 = 5;
+const MAX_PROTO_VERSION: u32 = 0x04;
 
 /// Known protocol versions.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -23,7 +23,6 @@ pub enum ProtoVersion {
     V1,
     V3,
     V4,
-    V5,
 }
 /// Session parameters negotiated with the target.
 #[derive(Clone, Copy, Debug)]
@@ -118,7 +117,6 @@ fn determine_version_and_compression(
         1 => return Ok((ProtoVersion::V1, supports_compression)),
         3 => return Ok((ProtoVersion::V3, supports_compression)),
         4 => return Ok((ProtoVersion::V4, supports_compression)),
-        5 => return Ok((ProtoVersion::V5, supports_compression)),
         _ => return Err(DownloadProtocolError::UnknownProtoVersion(bl_version.into()).into()),
     };
 }

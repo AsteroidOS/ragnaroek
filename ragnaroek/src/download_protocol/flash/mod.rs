@@ -24,8 +24,7 @@ pub(crate) fn flash(
     pit_entry: Either<PitEntryV1, PitEntryV2>,
 ) -> Result<()> {
     log::info!(target: "FLASH", "Starting flash of {} bytes total", data.len());
-    let supports_64bit_size: bool =
-        sp.proto_version == ProtoVersion::V4 || sp.proto_version == ProtoVersion::V5;
+    let supports_64bit_size: bool = sp.proto_version == ProtoVersion::V4;
     set_total_size(c, data, supports_64bit_size)?;
     set_file_part_size(c, sp.max_file_part_size)?;
     start(c)?;
