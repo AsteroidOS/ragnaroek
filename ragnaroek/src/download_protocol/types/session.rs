@@ -45,10 +45,8 @@ impl Session {
     pub fn flash(&mut self, data: &[u8], pit_entry: Either<PitEntryV1, PitEntryV2>) -> Result<()> {
         return flash(&mut self.c, self.params, data, pit_entry);
     }
-}
-
-impl Drop for Session {
-    fn drop(&mut self) {
-        end_session(&mut self.c, ActionAfter::Nothing).unwrap();
+    /// Factory reset user data on the target.
+    pub fn factory_reset(&mut self) -> Result<()> {
+        return factory_reset(&mut self.c);
     }
 }

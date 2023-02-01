@@ -31,6 +31,7 @@ fn main() {
         Some(("parse-pit", sub_args)) => parse_pit(sub_args),
         Some(("flash", sub_args)) => flash(sub_args),
         Some(("shell", sub_args)) => shell(sub_args),
+        Some(("factory-reset", sub_args)) => factory_reset(sub_args),
         Some(("upload-mode", sub_args)) => upload_mode(sub_args),
         _ => panic!("Unexpected missing subcommand! This should've been caught by clap."),
     }
@@ -114,6 +115,10 @@ fn define_cli() -> ArgMatches {
         )
         .arg(transport.clone());
 
+    let factory_reset = Command::new("factory-reset")
+        .about("Performs a factory reset")
+        .arg(transport.clone());
+
     // TODO: Add subcommands for displaying probe table etc.
     // TODO: Add support for specifying name of probe table memory range to dump
     // TODO: This is getting pretty hefty. Consider moving out of here.
@@ -164,6 +169,7 @@ fn define_cli() -> ArgMatches {
             flash,
             shell,
             upload_mode,
+            factory_reset,
         ])
         .get_matches();
 }
@@ -336,6 +342,12 @@ fn shell(args: &ArgMatches) {
         }
         std::io::stdout().flush().unwrap();
     }
+}
+
+fn factory_reset(args: &ArgMatches) {
+    let comm: Box<dyn Communicator> = get_download_communicator(args).unwrap();
+    let mut sess = download_protocol::Session::begin(comm).unwrap();
+    sess.factory_reset().unwrap();
 }
 
 fn get_upload_communicator(args: &ArgMatches) -> Result<Box<dyn Communicator>> {

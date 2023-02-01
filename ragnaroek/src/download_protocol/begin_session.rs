@@ -5,6 +5,7 @@ use crate::comms::Communicator;
 
 const BEGIN_SESSION: u32 = 0x00;
 const SET_PACKET_SIZE: u32 = 0x05;
+const ERASE_USERDATA: u32 = 0x07;
 
 /// Maximum number of file parts permitted in one flashing sequence for protocol version 1.
 const V1_MAX_SEQ_PARTS: u32 = 800;
@@ -141,4 +142,20 @@ pub(crate) fn begin_session(c: &mut Box<dyn Communicator>) -> Result<SessionPara
     log::debug!(target: "SESS", "Negotiated session params: {:?}", params);
 
     return Ok(params);
+}
+
+/// Performs a factory reset.
+pub(crate) fn factory_reset(c: &mut Box<dyn Communicator>) -> Result<()> {
+    log::info!(target: "SESSION", "Erasing userdata");
+    let p = OdinCmdPacket::with_1_arg(OdinCmd::SessionStart, OdinInt::from(ERASE_USERDATA));
+    p.send(c)?;
+
+    let resp = OdinCmdReply::read(c)?;
+    if resp.cmd != OdinCmd::SessionStart {
+        return Err(
+            DownloadProtocolError::UnexpectedOdinCmd(OdinCmd::SessionStart, resp.cmd).into(),
+        );
+    }
+    log::info!(target: "SESSION", "Erased userdata OK, erase function status {}", resp.arg);
+    return Ok(());
 }
