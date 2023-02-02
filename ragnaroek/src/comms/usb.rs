@@ -1,5 +1,5 @@
 use super::*;
-use rusb::{Device, Direction, GlobalContext, InterfaceDescriptor};
+use rusb::*;
 
 use std::io::Result as IOResult;
 use std::time::Duration;
@@ -14,7 +14,7 @@ const USB_DEFAULT_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// `Connection` implements a USB ODIN mode connection.
 pub struct Connection {
-    handle: rusb::DeviceHandle<GlobalContext>,
+    handle: DeviceHandle<GlobalContext>,
     send_endpoint: u8,
     recv_endpoint: u8,
 }
@@ -145,5 +145,13 @@ impl Communicator for Connection {
 
         log::trace!(target: "USB", "Recv nonblocking: {}", format_data_buf(&buf));
         return Ok(buf);
+    }
+}
+
+impl Drop for Connection {
+    fn drop(&mut self) {
+        log::info!(target: "USB", "Dropping Connection, resetting device");
+        self.handle.reset().unwrap();
+        log::info!(target: "USB", "Device reset OK");
     }
 }
