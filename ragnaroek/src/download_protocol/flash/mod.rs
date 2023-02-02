@@ -17,11 +17,14 @@ const SET_FILE_PART_SIZE: u32 = 0x05;
 /// The top-level flash function.
 ///
 /// It chops the file up into flash sequences and sends them all to the target.
+///
+/// `cb` is a callback for e.g. displaying a progress bar.
 pub(crate) fn flash(
     c: &mut Box<dyn Communicator>,
     sp: SessionParams,
     data: &[u8],
     pit_entry: Either<PitEntryV1, PitEntryV2>,
+    cb: &mut Option<&mut impl FnMut(u64)>,
 ) -> Result<()> {
     log::info!(target: "FLASH", "Starting flash of {} bytes total", data.len());
     let supports_64bit_size: bool = sp.proto_version == ProtoVersion::V4;
@@ -42,7 +45,7 @@ pub(crate) fn flash(
         log::debug!(target: "FLASH", "[Sequence {}/{}] OK", i + 1, total_seqs);
 
         log::debug!(target: "FLASH", "[Sequence {}/{}] Transferring data", i + 1, total_seqs);
-        sequence::transfer(c, sp.max_file_part_size as usize, data)?;
+        sequence::transfer(c, sp.max_file_part_size as usize, data, cb)?;
         log::debug!(target: "FLASH", "[Sequence {}/{}] OK", i + 1, total_seqs);
 
         bytes_flashed += sequence.len();

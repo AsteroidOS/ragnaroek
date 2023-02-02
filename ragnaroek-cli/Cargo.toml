@@ -12,3 +12,5 @@ env_logger = { version = "0.10", default_features = false, features = [ "color" 
 pit = { path = "../pit", features = [ "tabled", "serde" ] }
 ragnaroek = { path = "../ragnaroek", features = [ "usb" ] }
 serde_json = "1"
+is-terminal = "0.4"
+indicatif = { version = "0.17", default_features = false }

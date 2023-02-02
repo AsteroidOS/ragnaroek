@@ -13,6 +13,9 @@ use std::{
 use ragnaroek::{download_protocol::ActionAfter, *};
 
 use clap::{Arg, ArgMatches, Command};
+use indicatif::{ProgressBar, ProgressState, ProgressStyle};
+use is_terminal::IsTerminal;
+
 use pit::*;
 
 /// All the Odin .ini files I could find only ever mention this port
@@ -330,7 +333,26 @@ fn flash(args: &ArgMatches) {
     let mut data: Vec<u8> = Vec::new();
     f.read_to_end(&mut data).unwrap();
 
-    sess.flash(&data, pit_entry).unwrap();
+    // TODO: Make progress bar optional for reducing binary/dependency tree size
+    if std::io::stdout().is_terminal() {
+        let pb = ProgressBar::new(data.len() as u64);
+        pb.set_style(ProgressStyle::with_template("{prefix} {spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({eta})")
+        .unwrap()
+        .with_key("eta", |state: &ProgressState, w: &mut dyn std::fmt::Write| write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap())
+        .progress_chars("#>-"));
+        pb.finish_with_message(format!("{partition_name}: OK"));
+        pb.set_prefix(partition_name.clone());
+        let mut total: u64 = 0;
+        let mut update_pb = |progress: u64| {
+            total += progress;
+            pb.set_position(total);
+        };
+        sess.flash(&data, pit_entry, &mut Some(&mut update_pb))
+            .unwrap();
+    } else {
+        sess.flash(&data, pit_entry, &mut None::<&mut fn(u64)>)
+            .unwrap();
+    }
 
     let reboot = parse_reboot_option(args);
     sess.end(reboot).unwrap();

@@ -76,6 +76,7 @@ pub fn transfer(
     c: &mut Box<dyn Communicator>,
     max_file_part_size: usize,
     sequence: &[u8],
+    cb: &mut Option<&mut impl FnMut(u64)>,
 ) -> Result<()> {
     let total_parts = div_up(
         OdinInt::from(sequence.len() as u32),
@@ -92,6 +93,9 @@ pub fn transfer(
             send_part(c, &part, OdinInt::from(part_idx), is_last_part)?;
         } else {
             send_part(c, part, OdinInt::from(part_idx), is_last_part)?;
+        }
+        if let Some(cb) = cb {
+            cb(part.len() as u64);
         }
     }
     return Ok(());
