@@ -5,6 +5,7 @@ use test_case::test_case;
 
 const PIT_PATH: &str = "./testdata/";
 
+#[test_case("A40_EUR_OPEN.pit" ; "A40_EUR_OPEN.pit")]
 #[test_case("GT-I8190.pit" ; "GT-I8190.pit")]
 #[test_case("GT-I9500.pit" ; "GT-I9500.pit")]
 #[test_case("GT-I9505.pit" ; "GT-I9505.pit")]
