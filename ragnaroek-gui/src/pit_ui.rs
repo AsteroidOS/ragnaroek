@@ -1,6 +1,7 @@
 use eframe::egui;
 use egui_extras::TableBuilder;
 use pit;
+use pit::Pit;
 use ragnaroek;
 use rfd;
 
@@ -18,8 +19,21 @@ pub fn start_download(s: SharedSession) -> mpsc::Receiver<ragnaroek::Result<pit:
     thread::spawn(move || {
         let mut s_locked = s.lock().unwrap();
         let s_locked = s_locked.deref_mut();
-        let pit = s_locked.download_pit(s_locked.params);
-        send.send(pit).unwrap();
+        let pit_data = match s_locked.download_pit(s_locked.params) {
+            Ok(d) => d,
+            Err(e) => {
+                send.send(Err(e)).unwrap();
+                return;
+            }
+        };
+        let pit = match Pit::deserialize(&pit_data) {
+            Ok(pit) => pit,
+            Err(e) => {
+                send.send(Err(ragnaroek::Error::PitError(e))).unwrap();
+                return;
+            }
+        };
+        send.send(Ok(pit)).unwrap();
     });
     return recv;
 }

@@ -29,6 +29,7 @@ fn main() {
         Some(("wait-for-device", sub_args)) => wait_for_device(sub_args),
         Some(("print-pit", sub_args)) => print_pit(sub_args),
         Some(("parse-pit", sub_args)) => parse_pit(sub_args),
+        Some(("save-pit", sub_args)) => save_pit(sub_args),
         Some(("flash", sub_args)) => flash(sub_args),
         Some(("shell", sub_args)) => shell(sub_args),
         Some(("factory-reset", sub_args)) => factory_reset(sub_args),
@@ -82,6 +83,19 @@ fn define_cli() -> ArgMatches {
             .required(true)
         )
         .arg(output_format);
+
+    let save_pit = Command::new("save-pit")
+        .about("Save the target's Partition Information Table (PIT).")
+        .arg(transport.clone())
+        .arg(reboot.clone())
+        .arg(
+            Arg::new("path")
+                .long("path")
+                .short('p')
+                .help("Path to save PIT data into.")
+                .value_parser(clap::value_parser!(String))
+                .required(true),
+        );
 
     let flash = Command::new("flash").about("Flash the given image to the given partition. Remember that flashing certain partitions incorrectly may brick your device!")
     .arg(transport.clone())
@@ -166,6 +180,7 @@ fn define_cli() -> ArgMatches {
             wait_for_device,
             print_pit,
             parse_pit,
+            save_pit,
             flash,
             shell,
             upload_mode,
@@ -245,7 +260,8 @@ fn pretty_print_pit(pit: pit::Pit) {
 fn print_pit(args: &ArgMatches) {
     let comm: Box<dyn Communicator> = get_download_communicator(args).unwrap();
     let mut sess = download_protocol::Session::begin(comm).unwrap();
-    let pit = sess.download_pit(sess.params).unwrap();
+    let pit_data = sess.download_pit(sess.params).unwrap();
+    let pit = pit::Pit::deserialize(&pit_data).unwrap();
     pretty_print_pit(pit);
 
     let reboot = parse_reboot_option(args);
@@ -277,12 +293,29 @@ fn parse_pit(args: &ArgMatches) {
     }
 }
 
+fn save_pit(args: &ArgMatches) {
+    let path: &str = args
+        .get_one::<String>("path")
+        .expect("Required argument not set! This is probably a clap bug.");
+
+    let comm: Box<dyn Communicator> = get_download_communicator(args).unwrap();
+    let mut sess = download_protocol::Session::begin(comm).unwrap();
+    let pit_data = sess.download_pit(sess.params).unwrap();
+
+    let reboot = parse_reboot_option(args);
+    sess.end(reboot).unwrap();
+
+    let mut f = File::create(Path::new(path)).unwrap();
+    f.write_all(&pit_data).unwrap();
+}
+
 fn flash(args: &ArgMatches) {
     let comm: Box<dyn Communicator> = get_download_communicator(args).unwrap();
     let mut sess = download_protocol::Session::begin(comm).unwrap();
 
     // Find the PIT entry matching the partition to flash
-    let pit = sess.download_pit(sess.params).unwrap();
+    let pit_data = sess.download_pit(sess.params).unwrap();
+    let pit = pit::Pit::deserialize(&pit_data).unwrap();
     let partition_name = args.get_one::<String>("partition").unwrap();
     let pit_entry = pit
         .get_entry_by_name(partition_name)

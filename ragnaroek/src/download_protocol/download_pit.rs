@@ -4,8 +4,6 @@ use crate::download_protocol::begin_session::{ProtoVersion, SessionParams};
 use crate::Communicator;
 use crate::Result;
 
-use pit::*;
-
 const PIT_CHUNK_SIZE: usize = 500;
 
 const PIT_FLAG_DUMP: u32 = 0x01;
@@ -15,7 +13,7 @@ const PIT_FLAG_END: u32 = 0x03;
 const PIT_END_OK: u32 = 0x00;
 
 /// Downloads partitioning data from the target.
-pub(crate) fn download_pit(c: &mut Box<dyn Communicator>, p: SessionParams) -> Result<Pit> {
+pub(crate) fn download_pit(c: &mut Box<dyn Communicator>, p: SessionParams) -> Result<Vec<u8>> {
     log::info!(target: "PIT", "Start PIT download");
     let total_len: OdinInt = initiate_pit_download(c)?;
     let total_len: u32 = total_len.into();
@@ -36,7 +34,7 @@ pub(crate) fn download_pit(c: &mut Box<dyn Communicator>, p: SessionParams) -> R
     end_pit_download(c, is_proto_v3plus)?;
     log::info!(target: "PIT", "PIT download OK");
 
-    return Ok(Pit::deserialize(&data)?);
+    return Ok(data);
 }
 
 /// Sends the initial PIT download request packet and checks for an appropriate target response.

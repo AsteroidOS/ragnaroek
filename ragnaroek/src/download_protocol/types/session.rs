@@ -36,8 +36,8 @@ impl Session {
         return Ok(());
     }
 
-    /// Download partitioning data from the target.
-    pub fn download_pit(&mut self, p: SessionParams) -> Result<Pit> {
+    /// Download partitioning data from the target. Does not parse or validate the data.
+    pub fn download_pit(&mut self, p: SessionParams) -> Result<Vec<u8>> {
         return download_pit(&mut self.c, p);
     }
 
