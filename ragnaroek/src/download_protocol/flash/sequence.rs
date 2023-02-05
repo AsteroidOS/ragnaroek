@@ -110,11 +110,14 @@ pub fn end(
     pit_entry: &Either<PitEntryV1, PitEntryV2>,
     sequence_length_bytes: OdinInt,
     is_last_sequence: bool,
+    is_proto_v3plus: bool,
 ) -> Result<()> {
-    // For USB, an empty bulk transfer is expected before end
-    log::trace!(target: "FLASH", "Sending empty transfer before");
-    c.send(&[])?;
-    log::trace!(target: "FLASH", "Empty transfer OK");
+    // It seems like this is only needed for older bootloaders (when flashing via USB)
+    if !is_proto_v3plus {
+        log::trace!(target: "FLASH", "Sending empty transfer before");
+        c.send(&[])?;
+        log::trace!(target: "FLASH", "Empty transfer OK");
+    }
 
     // AP and modem packets are the same, except for the added partition ID field for AP
     let is_modem: bool;
@@ -161,17 +164,16 @@ pub fn end(
     p.send(c)?;
     log::trace!(target: "FLASH", "Sending end-of-transfer command OK");
 
-    // For USB, an empty bulk transfer is expected after end
-    // NOTE: Does not appear to be needed for the S3 and S4, are there any devices that need this?
-    /*
-    log::trace!(target: "FLASH", "Sending empty transfer after");
-    c.send(&[])?;
-    log::trace!(target: "FLASH", "Empty transfer OK");
-    */
-
     let resp = OdinCmdReply::read(c)?;
     if resp.cmd != OdinCmd::Flash {
         return Err(DownloadProtocolError::UnexpectedOdinCmd(OdinCmd::Flash, resp.cmd).into());
+    }
+
+    // For USB, an empty bulk transfer is expected after end (for older bootloaders)
+    if !is_proto_v3plus {
+        log::trace!(target: "FLASH", "Sending empty transfer after");
+        c.send(&[])?;
+        log::trace!(target: "FLASH", "Empty transfer OK");
     }
 
     return Ok(());

@@ -28,6 +28,7 @@ pub(crate) fn flash(
 ) -> Result<()> {
     log::info!(target: "FLASH", "Starting flash of {} bytes total", data.len());
     let supports_64bit_size: bool = sp.proto_version == ProtoVersion::V4;
+    let is_proto_v3plus: bool = sp.proto_version == ProtoVersion::V4;
     set_total_size(c, data, supports_64bit_size)?;
     set_file_part_size(c, sp.max_file_part_size)?;
     start(c)?;
@@ -51,7 +52,13 @@ pub(crate) fn flash(
         bytes_flashed += sequence.len();
         let is_last_sequence = bytes_flashed >= data.len();
         log::debug!(target: "FLASH", "[Sequence {}/{}] Ending transfer", i + 1, total_seqs);
-        sequence::end(c, &pit_entry, OdinInt::from(sequence_len), is_last_sequence)?;
+        sequence::end(
+            c,
+            &pit_entry,
+            OdinInt::from(sequence_len),
+            is_last_sequence,
+            is_proto_v3plus,
+        )?;
         log::debug!(target: "FLASH", "[Sequence {}/{}] OK", i + 1, total_seqs);
     }
     log::info!(target: "FLASH", "Flash OK");
