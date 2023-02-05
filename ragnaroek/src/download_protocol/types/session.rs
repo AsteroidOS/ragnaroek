@@ -42,8 +42,15 @@ impl Session {
     }
 
     /// Flash a file to the target.
-    pub fn flash(&mut self, data: &[u8], pit_entry: Either<PitEntryV1, PitEntryV2>) -> Result<()> {
-        return flash(&mut self.c, self.params, data, pit_entry);
+    ///
+    /// `cb` is an optional callback, called after each file part is transferred with the number of bytes transferred since the last call.
+    pub fn flash(
+        &mut self,
+        data: &[u8],
+        pit_entry: Either<PitEntryV1, PitEntryV2>,
+        cb: &mut Option<&mut impl FnMut(u64)>,
+    ) -> Result<()> {
+        return flash(&mut self.c, self.params, data, pit_entry, cb);
     }
     /// Factory reset user data on the target.
     pub fn factory_reset(&mut self) -> Result<()> {
