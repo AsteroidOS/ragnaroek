@@ -1,6 +1,7 @@
 [workspace]
 members = [
 	"pit",
+	"odintar",
 	"ragnaroek",
 	"ragnaroek-cli",
 	"ragnaroek-gui",
