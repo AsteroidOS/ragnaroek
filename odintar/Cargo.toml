@@ -11,6 +11,3 @@ description = "Library for manipulating Odin-flashable tar.md5 files"
 [dependencies]
 tar = "0.4"
 md5 = "0.7"
-
-[dev-dependencies]
-iter-read = "0.3"

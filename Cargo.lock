@@ -1474,12 +1474,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "iter-read"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c397ca3ea05ad509c4ec451fea28b4771236a376ca1c69fd5143aae0cf8f93c4"
-
-[[package]]
 name = "itoa"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1862,7 +1856,6 @@ dependencies = [
 name = "odintar"
 version = "0.1.0"
 dependencies = [
- "iter-read",
  "md5",
  "tar",
 ]
