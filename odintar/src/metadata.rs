@@ -20,11 +20,11 @@ impl Metadata {
         for line in data.lines() {
             if line.contains("BUILD_ID") {
                 let id = line.rsplit_once(":").unwrap().1;
-                let id: u64 = u64::from_str_radix(id, 10).unwrap();
+                let id: u64 = u64::from_str_radix(id, 10)?;
                 build_id = Some(id);
             } else if line.contains("original_tar_file_size") {
                 let size = line.rsplit_once(":").unwrap().1;
-                let size: u64 = u64::from_str_radix(size, 10).unwrap();
+                let size: u64 = u64::from_str_radix(size, 10)?;
                 orig_size = Some(size);
             }
         }

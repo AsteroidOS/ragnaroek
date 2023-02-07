@@ -36,25 +36,26 @@ impl<R: Read + Seek> OdinTar<R> {
 
         // Hash the file, 1MiB at a time.
         let mut buf: Vec<u8> = vec![];
-        buf.reserve(1024 * 1024);
+        buf.resize(1024 * 1024, 0);
         // Ignore the appended metadata.
         let metadata_pos = self.metadata_offset()?;
         let mut read_total: u64 = 0;
         loop {
-            let read = self.reader.read(&mut buf)?;
-            read_total += read as u64;
+            let read: usize = self.reader.read(&mut buf)?;
             if read == 0 {
                 // Assume reader is exhausted and all data has been processed
                 break;
             }
+            let read_u64: u64 = read.try_into()?;
+            read_total += read_u64;
+
             // Ignore any metadata we may have read
-            let min: u64 = std::cmp::min(read_total, metadata_pos + 1024);
-            let max: u64 = std::cmp::max(0, metadata_pos);
-            let metadata_overlap: usize = std::cmp::max(0, min - max).try_into().unwrap();
-            if metadata_overlap != 0 {
-                panic!("overlap: {metadata_overlap}");
-            }
+            let read_total_signed: i64 = read_total.try_into()?;
+            let metadata_pos_signed: i64 = metadata_pos.try_into()?;
+            let metadata_overlap: usize =
+                std::cmp::max(0, read_total_signed - metadata_pos_signed).try_into()?;
             let buf_used = &buf[0..read - metadata_overlap];
+
             ctx.consume(buf_used);
         }
 
@@ -66,6 +67,7 @@ impl<R: Read + Seek> OdinTar<R> {
             return Err(OdinTarError::ChecksumError(expected, got));
         }
     }
+
     /// Returns offset into the underlying `Reader` at which metadata begins.
     fn metadata_offset(&mut self) -> Result<u64, OdinTarError> {
         // Assume that looking for the last sequence of zeroes is a sane substitute for actually parsing
@@ -76,8 +78,7 @@ impl<R: Read + Seek> OdinTar<R> {
         // Find start of metadata
         loop {
             let mut sample: [u8; 4] = [0, 0, 0, 0];
-            // TODO: Error if not exactly 4 have been read
-            self.reader.read(&mut sample)?;
+            self.reader.read_exact(&mut sample)?;
             if sample != [0, 0, 0, 0] {
                 // We've gone one too far
                 self.reader.seek(SeekFrom::Current(-4))?;

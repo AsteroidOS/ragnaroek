@@ -8,12 +8,22 @@ const TEST_FILE: &str =
 
 #[test]
 fn test_read_metadata() {
+    let expected = Metadata {
+        build_id: 58944467,
+        orig_size: 3368960,
+        md5: String::from("218789cf915d52335c8d699169b31b99"),
+        orig_file_name: String::from(
+            "BL_A405FNXXU4CVK1_CL25488227_QB58944467_REV00_user_low_ship.tar",
+        ),
+    };
+
     let f = File::open(TEST_FILE).unwrap();
     let mut archive = OdinTar::from_reader(f);
 
     let metadata = archive.metadata();
 
     assert!(metadata.is_ok());
+    assert_eq!(expected, metadata.unwrap());
 }
 
 #[test]
