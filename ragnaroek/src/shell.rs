@@ -19,7 +19,7 @@ pub fn exchange_cmd(c: &mut Box<dyn Communicator>, cmd: &str) -> Result<Option<S
     loop {
         log::trace!(target: "SHELL", "Loop");
         let old_data_size: usize = data.len();
-        data.extend_from_slice(&c.recv().unwrap());
+        data.extend_from_slice(&c.recv()?);
         log::trace!(target: "SHELL", "Current response buffer: {:?}", data);
         if data.len() == old_data_size {
             // Assume that target is done

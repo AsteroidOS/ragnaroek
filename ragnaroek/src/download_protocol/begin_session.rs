@@ -127,7 +127,7 @@ fn determine_version_and_compression(
 /// Begins a session with a target.
 pub(crate) fn begin_session(c: &mut Box<dyn Communicator>) -> Result<SessionParams> {
     log::debug!(target: "SESS", "Beginning session");
-    let (proto_version, supports_compression) = determine_version_and_compression(c).unwrap();
+    let (proto_version, supports_compression) = determine_version_and_compression(c)?;
 
     let max_file_part_size = negotiate_packet_size(c, proto_version)?.inner;
     let max_seq_file_parts = get_max_seq_file_parts(proto_version)?.inner;

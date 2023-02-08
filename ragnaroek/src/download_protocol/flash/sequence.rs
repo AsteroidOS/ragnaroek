@@ -84,7 +84,7 @@ pub fn transfer(
     );
     log::debug!(target: "FLASH", "Total number of file parts in sequence: {}", total_parts);
     for (part_idx, part) in sequence.chunks(max_file_part_size).enumerate() {
-        let part_idx: u32 = part_idx.try_into().unwrap();
+        let part_idx: u32 = part_idx.try_into()?;
         let is_last_part = (total_parts.inner - 1) == part_idx;
         // Last part might have to be padded for this to work
         if is_last_part {

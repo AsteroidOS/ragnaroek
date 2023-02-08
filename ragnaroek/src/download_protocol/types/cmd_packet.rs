@@ -128,23 +128,23 @@ impl OdinCmdPacket {
         buf.extend_from_slice(&cmd_int.to_wire());
         buf.extend_from_slice(&self.arg1.to_wire());
 
-        if self.arg2.is_some() {
-            buf.extend_from_slice(&self.arg2.unwrap().to_wire());
+        if let Some(arg2) = self.arg2 {
+            buf.extend_from_slice(&arg2.to_wire());
         }
-        if self.arg3.is_some() {
-            buf.extend_from_slice(&self.arg3.unwrap().to_wire());
+        if let Some(arg3) = self.arg3 {
+            buf.extend_from_slice(&arg3.to_wire());
         }
-        if self.arg4.is_some() {
-            buf.extend_from_slice(&self.arg4.unwrap().to_wire());
+        if let Some(arg4) = self.arg4 {
+            buf.extend_from_slice(&arg4.to_wire());
         }
-        if self.arg5.is_some() {
-            buf.extend_from_slice(&self.arg5.unwrap().to_wire());
+        if let Some(arg5) = self.arg5 {
+            buf.extend_from_slice(&arg5.to_wire());
         }
-        if self.arg6.is_some() {
-            buf.extend_from_slice(&self.arg6.unwrap().to_wire());
+        if let Some(arg6) = self.arg6 {
+            buf.extend_from_slice(&arg6.to_wire());
         }
-        if self.arg7.is_some() {
-            buf.extend_from_slice(&self.arg7.unwrap().to_wire());
+        if let Some(arg7) = self.arg7 {
+            buf.extend_from_slice(&arg7.to_wire());
         }
 
         // Has to be padded to minimum packet size
@@ -161,23 +161,23 @@ impl OdinCmdPacket {
 impl fmt::Display for OdinCmdPacket {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut s = format!("Cmd: {:?}, Arg1: 0x{:X}", self.cmd, self.arg1);
-        if self.arg2.is_some() {
-            s.push_str(&format!(", Arg2: 0x{:X}", self.arg2.unwrap()));
+        if let Some(arg2) = self.arg2 {
+            s.push_str(&format!(", Arg2: 0x{:X}", &arg2));
         }
-        if self.arg3.is_some() {
-            s.push_str(&format!(", Arg3: 0x{:X}", self.arg3.unwrap()));
+        if let Some(arg3) = self.arg3 {
+            s.push_str(&format!(", Arg3: 0x{:X}", &arg3));
         }
-        if self.arg4.is_some() {
-            s.push_str(&format!(", Arg4: 0x{:X}", self.arg4.unwrap()));
+        if let Some(arg4) = self.arg4 {
+            s.push_str(&format!(", Arg4: 0x{:X}", &arg4));
         }
-        if self.arg5.is_some() {
-            s.push_str(&format!(", Arg5: 0x{:X}", self.arg5.unwrap()));
+        if let Some(arg5) = self.arg5 {
+            s.push_str(&format!(", Arg5: 0x{:X}", &arg5));
         }
-        if self.arg6.is_some() {
-            s.push_str(&format!(", Arg6: 0x{:X}", self.arg6.unwrap()));
+        if let Some(arg6) = self.arg6 {
+            s.push_str(&format!(", Arg6: 0x{:X}", &arg6));
         }
-        if self.arg7.is_some() {
-            s.push_str(&format!(", Arg7: 0x{:X}", self.arg7.unwrap()));
+        if let Some(arg7) = self.arg7 {
+            s.push_str(&format!(", Arg7: 0x{:X}", &arg7));
         }
 
         write!(f, "{}", s)

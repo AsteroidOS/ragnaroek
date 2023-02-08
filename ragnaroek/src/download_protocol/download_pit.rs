@@ -63,7 +63,7 @@ fn fetch_pit_chunk(
     chunk_idx: usize,
 ) -> Result<Vec<u8>> {
     // Calculate which chunk index to use
-    let chunk_idx: u32 = chunk_idx.try_into().unwrap();
+    let chunk_idx: u32 = chunk_idx.try_into()?;
     let chunk_idx: OdinInt = chunk_idx.into();
     log::debug!(target: "PIT", "[Chunk {}] Fetching part of remaining {} bytes", chunk_idx, total_remaining);
 

@@ -3,6 +3,7 @@ use crate::upload_protocol::UploadProtocolError;
 
 use core::result;
 use std::io;
+use std::num::TryFromIntError;
 
 use pit::PitError;
 
@@ -31,6 +32,8 @@ pub enum TransferError {
     DownloadProtocolError(DownloadProtocolError),
     /// Transfer error was caused by an upload mode protocol violation.
     UploadProtocolError(UploadProtocolError),
+    /// Transfer error was caused by a failing integer conversion. This is probably a bug in ragnaroek.
+    IntegerConversionError(TryFromIntError),
 }
 
 impl From<io::Error> for TransferError {
@@ -48,6 +51,12 @@ impl From<DownloadProtocolError> for TransferError {
 impl From<UploadProtocolError> for TransferError {
     fn from(e: UploadProtocolError) -> Self {
         return TransferError::UploadProtocolError(e);
+    }
+}
+
+impl From<TryFromIntError> for TransferError {
+    fn from(e: TryFromIntError) -> Self {
+        return TransferError::IntegerConversionError(e);
     }
 }
 
@@ -75,5 +84,17 @@ impl From<UploadProtocolError> for Error {
 impl From<PitError> for Error {
     fn from(e: PitError) -> Self {
         return Error::PitError(e);
+    }
+}
+
+impl From<TransferError> for Error {
+    fn from(e: TransferError) -> Self {
+        return Error::TransferError(e);
+    }
+}
+
+impl From<TryFromIntError> for Error {
+    fn from(e: TryFromIntError) -> Self {
+        return Error::from(TransferError::IntegerConversionError(e));
     }
 }

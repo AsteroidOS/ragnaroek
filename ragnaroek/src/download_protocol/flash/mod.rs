@@ -86,7 +86,7 @@ fn set_total_size(
         p = OdinCmdPacket::with_u64_arg(
             OdinCmd::SessionStart,
             OdinInt::from(SET_TOTAL_SIZE),
-            data.len().try_into().unwrap(),
+            data.len().try_into()?,
         );
     } else {
         log::trace!(target: "FLASH", "Target only supports 32-bit file sizes");
