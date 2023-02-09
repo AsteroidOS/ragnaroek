@@ -4,6 +4,7 @@ mod begin_session;
 mod download_pit;
 mod end_session;
 mod flash;
+mod flash_pit;
 mod magic_handshake;
 mod types;
 
