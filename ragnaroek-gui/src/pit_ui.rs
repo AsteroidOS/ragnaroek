@@ -53,8 +53,7 @@ pub fn open_dialog() -> mpsc::Receiver<Option<PathBuf>> {
     return recv;
 }
 
-/// Draw the PIT contents as a table.
-pub fn draw_table(ui: &mut egui::Ui, pit: pit::Pit) {
+fn draw_pitv1_table(ui: &mut egui::Ui, pit: pit::Pit) {
     ui.add_space(20.0);
     // Not part of table, but related
     ui.horizontal(|ui| {
@@ -62,6 +61,8 @@ pub fn draw_table(ui: &mut egui::Ui, pit: pit::Pit) {
         ui.monospace(pit.gang_name());
         ui.heading("Project Name: ");
         ui.monospace(pit.project_name());
+        ui.heading("PIT version: ");
+        ui.monospace("1");
     });
     let headings = [
         "Type",
@@ -88,11 +89,7 @@ pub fn draw_table(ui: &mut egui::Ui, pit: pit::Pit) {
             }
         })
         .body(|mut body| {
-            for entry in pit
-                .0
-                .left()
-                .expect("Currently, only display of PIT v1 is supported")
-            {
+            for entry in pit.0.left().unwrap() {
                 body.row(25.0, |mut row| {
                     for text in [
                         format!("{}", entry.pit_type),
@@ -115,4 +112,74 @@ pub fn draw_table(ui: &mut egui::Ui, pit: pit::Pit) {
                 });
             }
         });
+}
+
+fn draw_pitv2_table(ui: &mut egui::Ui, pit: pit::Pit) {
+    ui.add_space(20.0);
+    // Not part of table, but related
+    ui.horizontal(|ui| {
+        ui.heading("Gang Name: ");
+        ui.monospace(pit.gang_name());
+        ui.heading("Project Name: ");
+        ui.monospace(pit.project_name());
+        ui.heading("PIT version: ");
+        ui.monospace("2");
+    });
+    let headings = [
+        "Type",
+        "Device Type",
+        "Partition ID",
+        "Partition Type",
+        "PIT Filesystem",
+        "Start Block",
+        "Block Count",
+        "File Offset",
+        "File Size",
+        "Partition Name",
+        "Flash Filename",
+        "FOTA Filename",
+    ];
+    TableBuilder::new(ui)
+        .resizable(true)
+        .columns(egui_extras::Column::remainder(), headings.len())
+        .header(60.0, |mut header| {
+            for heading in headings {
+                header.col(|ui| {
+                    ui.heading(heading);
+                });
+            }
+        })
+        .body(|mut body| {
+            for entry in pit.0.right().unwrap() {
+                body.row(25.0, |mut row| {
+                    for text in [
+                        format!("{}", entry.pit_type),
+                        format!("{}", entry.pit_device_type),
+                        format!("{}", entry.partition_id),
+                        format!("{}", entry.partition_type),
+                        format!("{}", entry.pit_filesystem),
+                        format!("{}", entry.start_block),
+                        format!("{}", entry.block_num),
+                        format!("{}", entry.file_offset),
+                        format!("{}", entry.file_size),
+                        entry.partition_name.clone(),
+                        entry.flash_filename.clone(),
+                        entry.fota_filename.clone(),
+                    ] {
+                        row.col(|ui| {
+                            ui.label(text);
+                        });
+                    }
+                });
+            }
+        });
+}
+
+/// Draw the PIT contents as a table.
+pub fn draw_table(ui: &mut egui::Ui, pit: pit::Pit) {
+    if pit.0.clone().left().is_some() {
+        draw_pitv1_table(ui, pit);
+    } else {
+        draw_pitv2_table(ui, pit);
+    }
 }
