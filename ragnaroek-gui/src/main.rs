@@ -28,7 +28,8 @@ fn main() {
         "Ragnaroek",
         native_options,
         Box::new(|cc| Box::new(RagnaroekApp::new(cc))),
-    );
+    )
+    .unwrap();
 }
 
 /// How to communicate with the target.
