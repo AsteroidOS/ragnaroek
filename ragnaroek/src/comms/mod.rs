@@ -5,6 +5,10 @@ pub mod net_connect;
 pub mod usb;
 
 pub use std::io::Result;
+use std::time::Duration;
+
+/// Default timeout in seconds
+const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// This trait implements an interface that allows for decoupling
 /// the transport of bytes to and from the target from the actual Odin protocol implementation.
@@ -21,6 +25,8 @@ pub trait Communicator: Send {
     /// Receive however much data is waiting to be read. Returned data may be empty.
     /// Does not block.
     fn recv(&mut self) -> Result<Vec<u8>>;
+    /// Set a timeout for this `Communicator`. Default is 30 seconds.
+    fn set_timeout(&mut self, timeout: Duration);
 }
 
 /// Helper feature for debug logging

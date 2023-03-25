@@ -3,6 +3,8 @@ use crate::Result;
 
 use crate::comms::Communicator;
 
+use std::time::Duration;
+
 const BEGIN_SESSION: u32 = 0x00;
 const SET_PACKET_SIZE: u32 = 0x05;
 const ERASE_USERDATA: u32 = 0x07;
@@ -13,8 +15,12 @@ const V1_MAX_SEQ_PARTS: u32 = 800;
 const V1_MAX_FILE_PART_SIZE: u32 = 128 * 1024; // 128KiB
 /// Maximum number of file parts permitted in one flashing sequence for protocol version >1.
 const V2PLUS_MAX_SEQ_PARTS: u32 = 30;
+/// Timeout for a transfer for protocol version 1.
+const V1_TIMEOUT: Duration = Duration::from_secs(30);
 /// Maximum size of a single packet in a flashing sequence for protocol version >1.
 const V2PLUS_MAX_FILE_PART_SIZE: u32 = 1 * 1024 * 1024; // 1MiB
+/// Timeout for a transfer for protocol version >1.
+const V2PLUS_TIMEOUT: Duration = Duration::from_secs(120);
 /// Highest protocol version we support.
 const MAX_PROTO_VERSION: u32 = 0x04;
 
@@ -39,13 +45,18 @@ pub struct SessionParams {
     pub max_seq_file_parts: u32,
     /// Negotiated maximum sequence total size in bytes.
     pub max_seq_size_bytes: u32,
+    /// Timeout for sending and receiving data.
+    pub timeout: Duration,
 }
 
-fn negotiate_packet_size(c: &mut Box<dyn Communicator>, v: ProtoVersion) -> Result<OdinInt> {
+fn negotiate_packet_size_and_timeout(
+    c: &mut Box<dyn Communicator>,
+    v: ProtoVersion,
+) -> Result<(OdinInt, Duration)> {
     // This fixed size should be safe for proto version 0
     if v == ProtoVersion::V1 {
         log::trace!(target: "SESS", "Setting packet size supported by version 1: {}", V1_MAX_FILE_PART_SIZE);
-        return Ok(OdinInt::from(V1_MAX_FILE_PART_SIZE));
+        return Ok((OdinInt::from(V1_MAX_FILE_PART_SIZE), V1_TIMEOUT));
     }
 
     // Other versions support negotiation (and may, in fact, require it)
@@ -67,12 +78,12 @@ fn negotiate_packet_size(c: &mut Box<dyn Communicator>, v: ProtoVersion) -> Resu
     if resp.arg != OdinInt::from(0) {
         return Err(DownloadProtocolError::UnexpectedOdinCmdArg(OdinInt::from(0), resp.arg).into());
     }
-    return Ok(OdinInt::from(V2PLUS_MAX_FILE_PART_SIZE));
+    return Ok((OdinInt::from(V2PLUS_MAX_FILE_PART_SIZE), V2PLUS_TIMEOUT));
 }
 
 fn get_max_seq_file_parts(v: ProtoVersion) -> Result<OdinInt> {
     // Currently, it seems like there is no known mechanism to negotiate this.
-    // However, according to samsung-loki there's a safe defualt to use here.
+    // However, according to samsung-loki there's a safe default to use here.
     use ProtoVersion::*;
     match v {
         V1 => return Ok(OdinInt::from(V1_MAX_SEQ_PARTS)),
@@ -129,17 +140,19 @@ pub(crate) fn begin_session(c: &mut Box<dyn Communicator>) -> Result<SessionPara
     log::debug!(target: "SESS", "Beginning session");
     let (proto_version, supports_compression) = determine_version_and_compression(c)?;
 
-    let max_file_part_size = negotiate_packet_size(c, proto_version)?.inner;
+    let (max_file_part_size, timeout) = negotiate_packet_size_and_timeout(c, proto_version)?;
     let max_seq_file_parts = get_max_seq_file_parts(proto_version)?.inner;
 
     let params = SessionParams {
         supports_compression,
         proto_version,
-        max_file_part_size,
+        max_file_part_size: max_file_part_size.inner,
         max_seq_file_parts,
-        max_seq_size_bytes: max_seq_file_parts * max_file_part_size,
+        max_seq_size_bytes: max_seq_file_parts * max_file_part_size.inner,
+        timeout,
     };
     log::debug!(target: "SESS", "Negotiated session params: {:?}", params);
+    c.set_timeout(timeout);
 
     return Ok(params);
 }

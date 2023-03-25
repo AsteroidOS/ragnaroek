@@ -9,14 +9,13 @@ const SAMSUNG_VID: u16 = 0x04E8;
 const VALID_PIDS: [u16; 3] = [0x6601, 0x685D, 0x68C3];
 /// USB class that the desired configuration has (USB communications device)
 const USB_CLASS_CDC_DATA: u8 = 0x0A;
-/// Default USB timeout in seconds
-const USB_DEFAULT_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// `Connection` implements a USB ODIN mode connection.
 pub struct Connection {
     handle: DeviceHandle<GlobalContext>,
     send_endpoint: u8,
     recv_endpoint: u8,
+    timeout: Duration,
 }
 
 impl Connection {
@@ -44,13 +43,13 @@ impl Connection {
             .expect("Could not find suitable endpoint for sending data to the USB device");
         // Find endpoint suitable for receiving data from the device
         handle.claim_interface(interface_num).unwrap();
-        handle.set_alternate_setting(interface_num, 0).unwrap();
 
         log::debug!(target: "USB", "Connected");
         return Ok(Connection {
             handle,
             recv_endpoint: input,
             send_endpoint: output,
+            timeout: super::DEFAULT_TIMEOUT,
         });
     }
 }
@@ -106,7 +105,7 @@ impl Communicator for Connection {
     fn send(&mut self, data: &[u8]) -> IOResult<()> {
         log::trace!(target: "USB", "Send: {}", format_data_buf(data));
         self.handle
-            .write_bulk(self.send_endpoint, data, USB_DEFAULT_TIMEOUT)
+            .write_bulk(self.send_endpoint, data, self.timeout)
             .unwrap();
 
         return Ok(());
@@ -117,7 +116,7 @@ impl Communicator for Connection {
         buf.resize(how_much, 0);
         match self
             .handle
-            .read_bulk(self.recv_endpoint, &mut buf, USB_DEFAULT_TIMEOUT)
+            .read_bulk(self.recv_endpoint, &mut buf, self.timeout)
         {
             // FIXME: Should read repeatedly until desired data volume is reached instead
             Ok(read) => buf.resize(read, 0),
@@ -145,6 +144,11 @@ impl Communicator for Connection {
 
         log::trace!(target: "USB", "Recv nonblocking: {}", format_data_buf(&buf));
         return Ok(buf);
+    }
+
+    fn set_timeout(&mut self, timeout: Duration) {
+        log::info!(target: "USB", "Setting timeout: {timeout:?}");
+        self.timeout = timeout;
     }
 }
 

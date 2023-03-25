@@ -25,6 +25,12 @@ impl Listener {
         let (stream, _) = self.l.accept()?;
 
         log::debug!(target: "NET", "Accepted");
+        stream
+            .set_read_timeout(Some(super::DEFAULT_TIMEOUT))
+            .unwrap();
+        stream
+            .set_write_timeout(Some(super::DEFAULT_TIMEOUT))
+            .unwrap();
         return Ok(Connection { s: stream });
     }
 }
@@ -57,5 +63,15 @@ impl Communicator for Connection {
         self.s.read(&mut buf)?;
         log::trace!(target: "NET", "Recv nonblocking: {}", format_data_buf(&buf));
         return Ok(buf);
+    }
+
+    fn set_timeout(&mut self, timeout: Duration) {
+        log::info!(target: "NET", "Setting timeout: {timeout:?}");
+        self.s
+            .set_read_timeout(Some(super::DEFAULT_TIMEOUT))
+            .unwrap();
+        self.s
+            .set_write_timeout(Some(super::DEFAULT_TIMEOUT))
+            .unwrap();
     }
 }

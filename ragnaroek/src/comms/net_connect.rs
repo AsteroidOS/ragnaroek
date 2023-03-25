@@ -14,6 +14,8 @@ impl Connection {
         let s = TcpStream::connect(format!("{}:{}", target_ip, port)).unwrap();
 
         log::debug!(target: "NET", "Connected");
+        s.set_read_timeout(Some(super::DEFAULT_TIMEOUT)).unwrap();
+        s.set_write_timeout(Some(super::DEFAULT_TIMEOUT)).unwrap();
         return Connection { s };
     }
 }
@@ -40,5 +42,15 @@ impl Communicator for Connection {
         self.s.read(&mut buf)?;
         log::trace!(target: "NET", "Recv nonblocking: {}", format_data_buf(&buf));
         return Ok(buf);
+    }
+
+    fn set_timeout(&mut self, timeout: Duration) {
+        log::info!(target: "NET", "Setting timeout: {timeout:?}");
+        self.s
+            .set_read_timeout(Some(super::DEFAULT_TIMEOUT))
+            .unwrap();
+        self.s
+            .set_write_timeout(Some(super::DEFAULT_TIMEOUT))
+            .unwrap();
     }
 }
