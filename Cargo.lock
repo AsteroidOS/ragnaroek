@@ -824,6 +824,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "egui_dock"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be7e6eb63cb936413bd2a4f54be4a9ef53a48252f25864f5f946d4954d7332bd"
+dependencies = [
+ "egui",
+]
+
+[[package]]
 name = "egui_extras"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -846,6 +855,18 @@ dependencies = [
  "tracing",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "egui_logger"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "74b27c6133cf52de7403d62dae1516b21a876df30f4ff59f7c1f7025f1fef1f0"
+dependencies = [
+ "egui",
+ "log",
+ "once_cell",
+ "regex",
 ]
 
 [[package]]
@@ -1992,8 +2013,9 @@ name = "ragnaroek-gui"
 version = "0.1.0"
 dependencies = [
  "eframe",
+ "egui_dock",
  "egui_extras",
- "env_logger",
+ "egui_logger",
  "pit",
  "ragnaroek",
  "rfd",

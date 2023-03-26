@@ -2,6 +2,8 @@ mod pit_tab;
 use pit_tab::PitTab;
 mod connect_tab;
 use connect_tab::ConnectTab;
+mod log_tab;
+use log_tab::LogTab;
 
 use eframe::egui;
 use egui_dock::{NodeIndex, Tree};
@@ -12,6 +14,7 @@ pub struct Tabs {
     tree: Tree<String>,
     pit_tab: PitTab,
     connect_tab: ConnectTab,
+    log_tab: LogTab,
 }
 
 impl Tabs {
@@ -20,14 +23,16 @@ impl Tabs {
         let pit_tab = PitTab::new(s.clone());
         let connect_tab_title = "Connect".to_string();
         let connect_tab = ConnectTab::new(s);
+        let log_tab_title = "Logs".to_string();
+        let log_tab = LogTab::new();
 
-        let mut tree = Tree::new(vec![pit_tab_title]);
-        tree.split_left(NodeIndex::root(), 0.50, vec![connect_tab_title]);
+        let tree = Tree::new(vec![connect_tab_title, pit_tab_title, log_tab_title]);
 
         Self {
             tree,
             pit_tab,
             connect_tab,
+            log_tab,
         }
     }
 
@@ -40,6 +45,7 @@ impl Tabs {
                 &mut TabViewer {
                     pit_tab: &mut self.pit_tab,
                     connect_tab: &mut self.connect_tab,
+                    log_tab: &mut self.log_tab,
                 },
             );
     }
@@ -48,6 +54,7 @@ impl Tabs {
 pub struct TabViewer<'a> {
     pit_tab: &'a mut PitTab,
     connect_tab: &'a mut ConnectTab,
+    log_tab: &'a mut LogTab,
 }
 
 impl<'a> egui_dock::TabViewer for TabViewer<'a> {
@@ -61,8 +68,11 @@ impl<'a> egui_dock::TabViewer for TabViewer<'a> {
             "Connect" => {
                 self.connect_tab.ui(ui);
             }
+            "Logs" => {
+                self.log_tab.ui(ui);
+            }
             _ => {
-                ui.label(format!("Content of {tab}"));
+                ui.label(format!("Unknown tab {tab}"));
             }
         }
     }
