@@ -12,4 +12,5 @@ eframe = { version = "0.21", features = ["dark-light"], default-features = true 
 egui_extras = { version = "0.21", default-features = false }
 rfd = { version = "0.11", default-features = false, features = [ "xdg-portal" ] }
 env_logger = { version = "0.10", default_features = false }
+egui_dock = "0.4"
 

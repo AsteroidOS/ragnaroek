@@ -1,15 +1,11 @@
 //! This crate provides an egui-based graphical frontend for ragnaroek.
 
-mod log_ui;
-mod pit_ui;
+mod tabs;
 
 use eframe::egui::{self, RichText};
-use pit;
 use ragnaroek::{self, download_protocol};
 use std::{
-    fs,
-    path::PathBuf,
-    sync::mpsc::{self, TryRecvError},
+    sync::mpsc::{self},
     sync::{Arc, Mutex},
     thread,
 };
@@ -19,7 +15,7 @@ const WIRELESS_PORT: u16 = 13579;
 /// All the targets implementing wireless mode seem to use this IP
 const WIRELESS_TARGET_IP: &str = "192.168.49.1";
 
-pub type SharedSession = Arc<Mutex<ragnaroek::download_protocol::Session>>;
+pub type SharedSession = Arc<Mutex<Option<ragnaroek::download_protocol::Session>>>;
 
 fn main() {
     let mut native_options = eframe::NativeOptions::default();
@@ -44,19 +40,17 @@ enum CommsMode {
 
 #[derive(Default)]
 struct RagnaroekApp {
-    interaction_enabled: bool,
     comms_mode: CommsMode,
     comm: Option<SharedSession>,
-    pit_dialog_receiver: Option<mpsc::Receiver<Option<PathBuf>>>,
     comm_receiver: Option<mpsc::Receiver<ragnaroek::Result<SharedSession>>>,
-    pit_receiver: Option<mpsc::Receiver<ragnaroek::Result<pit::Pit>>>,
-    rendering_pit: Option<pit::Pit>,
+    tabs: Option<tabs::Tabs>,
+    shared_session: SharedSession,
 }
 
 impl RagnaroekApp {
     fn new(_: &eframe::CreationContext<'_>) -> Self {
         let mut s = Self::default();
-        s.interaction_enabled = true;
+        s.tabs = Some(tabs::Tabs::new(s.shared_session.clone()));
         return s;
     }
 }
@@ -85,7 +79,7 @@ fn connect_and_detect(m: CommsMode) -> mpsc::Receiver<ragnaroek::Result<SharedSe
     thread::spawn(move || {
         let c = connect(m).unwrap();
         let s = download_protocol::Session::begin(c).unwrap();
-        send.send(ragnaroek::Result::Ok(Arc::new(Mutex::new(s))))
+        send.send(ragnaroek::Result::Ok(Arc::new(Mutex::new(Some(s)))))
             .unwrap();
     });
     return recv;
@@ -94,7 +88,6 @@ fn connect_and_detect(m: CommsMode) -> mpsc::Receiver<ragnaroek::Result<SharedSe
 impl eframe::App for RagnaroekApp {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
         egui::TopBottomPanel::top("title").show(ctx, |ui| {
-            ui.set_enabled(self.interaction_enabled);
             ui.vertical_centered_justified(|ui| {
                 // Label displaying connection status
                 if self.comm_receiver.is_some() {
@@ -112,6 +105,7 @@ impl eframe::App for RagnaroekApp {
             });
         });
 
+        /*
         egui::TopBottomPanel::bottom("actions").show(ctx, |ui| {
             ui.set_enabled(self.interaction_enabled);
             ui.horizontal(|ui| {
@@ -206,8 +200,11 @@ impl eframe::App for RagnaroekApp {
                 }
             });
         });
+        */
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            self.tabs.as_mut().unwrap().ui(ui);
+            /*
             ui.set_enabled(self.interaction_enabled);
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
@@ -224,12 +221,8 @@ impl eframe::App for RagnaroekApp {
                         }
                     }
                 });
-                // If there's a PIT file to render, do it
-                if self.rendering_pit.is_some() {
-                    let p = self.rendering_pit.as_ref().unwrap();
-                    pit_ui::draw_table(ui, p.clone());
-                }
             });
+            */
         });
     }
 }
