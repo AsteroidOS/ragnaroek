@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::error::TransferError;
 use crate::Communicator;
 use crate::Error;
@@ -16,7 +18,7 @@ pub fn handshake(c: &mut Box<dyn Communicator>) -> Result<()> {
     super::send_packet(c, PREAMBLE)?;
 
     match c.recv_exact(ACKNOWLEDGMENT.len()) {
-        Err(e) => return Err(Error::TransferError(TransferError::IoError(e))),
+        Err(e) => return Err(Error::TransferError(TransferError::IoError(Arc::new(e)))),
         Ok(data) => {
             if data != ACKNOWLEDGMENT {
                 return Err(Error::TransferError(TransferError::UploadProtocolError(

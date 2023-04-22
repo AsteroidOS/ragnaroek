@@ -4,13 +4,14 @@ use crate::upload_protocol::UploadProtocolError;
 use core::result;
 use std::io;
 use std::num::TryFromIntError;
+use std::sync::Arc;
 
 use pit::PitError;
 
 /// Raganroek's top-level error type.
 ///
 /// This is the only error type that public functions of this crate will ever return.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Error {
     /// Error encountered while processing a PIT file.
     PitError(PitError),
@@ -24,21 +25,21 @@ pub enum Error {
 pub type Result<T> = result::Result<T, Error>;
 
 /// Error type returned when an Odin protocol transfer fails.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TransferError {
     /// Transfer error was caused by an I/O issue.
-    IoError(io::Error),
+    IoError(Arc<io::Error>),
     /// Transfer error was caused by an Odin protocol violation.
     DownloadProtocolError(DownloadProtocolError),
     /// Transfer error was caused by an upload mode protocol violation.
     UploadProtocolError(UploadProtocolError),
     /// Transfer error was caused by a failing integer conversion. This is probably a bug in ragnaroek.
-    IntegerConversionError(TryFromIntError),
+    IntegeArconversionError(TryFromIntError),
 }
 
 impl From<io::Error> for TransferError {
     fn from(e: io::Error) -> Self {
-        return TransferError::IoError(e);
+        return TransferError::IoError(Arc::new(e));
     }
 }
 
@@ -56,13 +57,13 @@ impl From<UploadProtocolError> for TransferError {
 
 impl From<TryFromIntError> for TransferError {
     fn from(e: TryFromIntError) -> Self {
-        return TransferError::IntegerConversionError(e);
+        return TransferError::IntegeArconversionError(e);
     }
 }
 
 impl From<io::Error> for Error {
     fn from(e: io::Error) -> Self {
-        let e = TransferError::IoError(e);
+        let e = TransferError::IoError(Arc::new(e));
         return Error::TransferError(e);
     }
 }
@@ -95,6 +96,6 @@ impl From<TransferError> for Error {
 
 impl From<TryFromIntError> for Error {
     fn from(e: TryFromIntError) -> Self {
-        return Error::from(TransferError::IntegerConversionError(e));
+        return Error::from(TransferError::IntegeArconversionError(e));
     }
 }
