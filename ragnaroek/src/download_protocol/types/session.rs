@@ -7,8 +7,12 @@ pub use super::super::end_session::ActionAfter;
 use super::super::end_session::*;
 use super::super::flash::*;
 use super::super::magic_handshake::*;
+use crate::download_protocol::*;
 use crate::Communicator;
 use crate::Result;
+
+const BEGIN_SESSION: u32 = 0x00;
+const T_FLASH: u32 = 0x08;
 
 /// This module's main type.
 /// Manages the communications lifecycle with the target for the download protocol.
@@ -28,6 +32,34 @@ impl Session {
         magic_handshake(&mut c)?;
         let params = begin_session(&mut c)?;
         return Ok(Session { c, params });
+    }
+
+    /// Enter T-Flash download mode (write to microSD card).
+    /// Call this after `begin` and before `end`.
+    pub fn enable_tflash(&mut self) -> Result<()> {
+        log::debug!(target: "SESS", "Enabling T-Flash mode");
+        let p = OdinCmdPacket::with_2_args(
+            OdinCmd::SessionStart,
+            OdinInt::from(BEGIN_SESSION),
+            OdinInt::from(T_FLASH),
+        );
+        p.send(&mut self.c)?;
+
+        let resp = OdinCmdReply::read(&mut self.c)?;
+        if resp.cmd != OdinCmd::SessionStart {
+            return Err(
+                DownloadProtocolError::UnexpectedOdinCmd(OdinCmd::SessionStart, resp.cmd).into(),
+            );
+        }
+
+        // Anything other than 0x00 indicates failure.
+        if resp.arg != OdinInt::from(0x00) {
+            return Err(
+                DownloadProtocolError::UnexpectedOdinCmdArg(OdinInt::from(0x00), resp.arg).into(),
+            );
+        }
+        log::debug!(target: "SESS", "T-Flash mode enabled");
+        return Ok(());
     }
 
     /// End the `Session` and do cleanup.

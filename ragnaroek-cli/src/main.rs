@@ -116,6 +116,13 @@ fn define_cli() -> ArgMatches {
         .required(true)
         .num_args(1)
         .help("The filename of the file containing the partition contents you want to flash. Required.")
+    )
+    .arg(Arg::new("t-flash")
+        .long("t-flash")
+        .required(false)
+        .value_parser(clap::value_parser!(bool))
+        .default_value("false")
+        .help("Whether to flash to the microSD card instead of the device itself.")
     );
 
     let wait_for_device = Command::new("wait-for-device")
@@ -315,6 +322,13 @@ fn save_pit(args: &ArgMatches) {
 fn flash(args: &ArgMatches) {
     let comm: Box<dyn Communicator> = get_download_communicator(args).unwrap();
     let mut sess = download_protocol::Session::begin(comm).unwrap();
+
+    let t_flash: bool = *args
+        .get_one::<bool>("t-flash")
+        .expect("Argument invalid! This is probably a clap bug.");
+    if t_flash {
+        sess.enable_tflash().unwrap();
+    }
 
     // Find the PIT entry matching the partition to flash
     let pit_data = sess.download_pit(sess.params).unwrap();
