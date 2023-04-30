@@ -8,7 +8,7 @@ pub enum OdinTarError {
     /// An error encountered when reading the underlying tar archive.
     IoError(io::Error),
     /// An error encountered when reading Odin's metadata in the archive.
-    MetadataError(),
+    MetadataError,
     /// Checksum mismatch between Odin's metadata and the actual contents.
     ChecksumError(String, String),
     /// Invalid UTF-8 in the Odin metadata.

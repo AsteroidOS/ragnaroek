@@ -13,6 +13,7 @@ mod integration_tests;
 use std::io::{Read, Seek, SeekFrom};
 
 pub use tar;
+const MD_5: &str = "218789cf915d52335c8d699169b31b99";
 
 /// An Odin tar archive.
 pub struct OdinTar<R: ?Sized + Read + Seek> {
@@ -37,9 +38,10 @@ impl<R: Read + Seek> OdinTar<R> {
         // Hash the file, 1MiB at a time.
         let mut buf: Vec<u8> = vec![];
         buf.resize(1024 * 1024, 0);
-        // Ignore the appended metadata.
-        let metadata_pos = self.metadata_offset()?;
+        // Ignore the appended filename and hash.
+        let data_to_discard_pos = self.hashed_offset()?;
         let mut read_total: u64 = 0;
+
         loop {
             let read: usize = self.reader.read(&mut buf)?;
             if read == 0 {
@@ -51,21 +53,47 @@ impl<R: Read + Seek> OdinTar<R> {
 
             // Ignore any metadata we may have read
             let read_total_signed: i64 = read_total.try_into()?;
-            let metadata_pos_signed: i64 = metadata_pos.try_into()?;
+            let data_to_discard_pos_signed: i64 = data_to_discard_pos.try_into()?;
             let metadata_overlap: usize =
-                std::cmp::max(0, read_total_signed - metadata_pos_signed).try_into()?;
+                std::cmp::max(0, read_total_signed - data_to_discard_pos_signed).try_into()?;
             let buf_used = &buf[0..read - metadata_overlap];
 
             ctx.consume(buf_used);
         }
-
         let got = ctx.compute();
         let got: String = format!("{got:x}");
-        if got == expected {
-            return Ok(());
-        } else {
+        if got != expected {
             return Err(OdinTarError::ChecksumError(expected, got));
+        } else {
+            return Ok(());
         }
+    }
+
+    /// Returns offset into the underlying `Reader` at which data which should not be hashed begins.
+    fn hashed_offset(&mut self) -> Result<u64, OdinTarError> {
+        // We simply search for the second occurrence of 0x0A (LF) in the file from the end.
+        // Doing this on a reader is a pain, so we read the end of the file into a buffer.
+        // NOTE: This assumes metadata no longer than 768 bytes.
+        self.reader.seek(SeekFrom::End(-768))?;
+        let mut buf: Vec<u8> = vec![];
+        buf.resize(768, 0);
+        self.reader.read_exact(&mut buf)?;
+        let reader_size = self.reader.seek(SeekFrom::End(0))?;
+        self.reader.rewind()?;
+
+        let occurrence_indices = buf
+            .iter()
+            .enumerate()
+            .filter(|(_, x)| **x == 0x0A)
+            .map(|(i, _)| i + 1)
+            .collect::<Vec<usize>>();
+        if occurrence_indices.len() < 2 {
+            return Err(OdinTarError::MetadataError);
+        }
+
+        let offset = occurrence_indices[occurrence_indices.len() - 2] as u64 + reader_size - 768;
+
+        return Ok(offset);
     }
 
     /// Returns offset into the underlying `Reader` at which metadata begins.

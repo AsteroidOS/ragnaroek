@@ -32,7 +32,7 @@ fn test_validate_ok() {
     let mut archive = OdinTar::from_reader(f);
 
     let v = archive.validate();
-    panic!("{v:?}");
+    assert!(v.is_ok());
 }
 
 #[test]
