@@ -1,9 +1,13 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, nixGL, ... }:
 
 {
-  packages = lib.optionals pkgs.stdenv.isDarwin (with pkgs.darwin.apple_sdk; [
-    frameworks.Security
-  ]);
+  packages = lib.optionals pkgs.stdenv.isDarwin
+    (with pkgs.darwin.apple_sdk; [
+      frameworks.Security
+    ]) ++ lib.optionals pkgs.stdenv.isLinux ([
+    pkgs.nixgl.auto.nixGLDefault
+  ]) ++
+  [ pkgs.rnix-lsp pkgs.nixpkgs-fmt ];
 
   languages.nix.enable = true;
   languages.rust = {

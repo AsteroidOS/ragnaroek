@@ -7,3 +7,11 @@ inputs:
     inputs:
       nixpkgs:
         follows: nixpkgs
+
+  nixGL:
+    url: github:guibou/nixGL
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+    overlays:
+      - default
