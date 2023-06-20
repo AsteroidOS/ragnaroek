@@ -13,7 +13,6 @@ mod integration_tests;
 use std::io::{Read, Seek, SeekFrom};
 
 pub use tar;
-const MD_5: &str = "218789cf915d52335c8d699169b31b99";
 
 /// An Odin tar archive.
 pub struct OdinTar<R: ?Sized + Read + Seek> {
