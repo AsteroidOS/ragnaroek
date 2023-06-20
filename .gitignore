@@ -1,3 +1,10 @@
 /target
 **.DS_Store
 /.stversions
+
+/.cargo
+
+# Devenv
+.devenv*
+devenv.local.nix
+/.direnv
