@@ -12,7 +12,7 @@ mod pit_entry;
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use either::Either;
+pub use either::Either;
 
 pub use error::PitError;
 pub use pit_entry::*;
