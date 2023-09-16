@@ -1,6 +1,7 @@
 /target
 **.DS_Store
 /.stversions
+/cache.json
 
 /.cargo
 

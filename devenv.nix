@@ -12,7 +12,7 @@
   languages.nix.enable = true;
   languages.rust = {
     enable = true;
-    version = "stable";
+    channel = "stable";
   };
 
 

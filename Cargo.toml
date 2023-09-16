@@ -1,11 +1,6 @@
 [workspace]
-members = [
-	"pit",
-	"odintar",
-	"ragnaroek",
-	"ragnaroek-cli",
-	"ragnaroek-gui",
-]
+members = ["pit", "odintar", "ragnaroek", "ragnaroek-cli", "ragnaroek-gui"]
+resolver = "2"
 
 [profile.release]
 lto = "fat"
