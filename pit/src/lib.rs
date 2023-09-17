@@ -4,6 +4,7 @@
 #![forbid(unsafe_code)]
 #![forbid(missing_docs)]
 #![allow(clippy::needless_return)]
+#![allow(clippy::useless_vec)] // Caused by Tabled macro, not us
 
 mod deserialize;
 #[cfg(test)]
