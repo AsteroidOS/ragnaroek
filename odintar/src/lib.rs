@@ -2,6 +2,8 @@
 //! in particular parsing it's metadata and performing hash validation.
 
 #![allow(clippy::needless_return)]
+#![forbid(unsafe_code)]
+#![forbid(missing_docs)]
 
 mod error;
 pub use error::*;
@@ -114,7 +116,7 @@ impl<R: Read + Seek> OdinTar<R> {
             self.reader.seek(SeekFrom::Current(4))?;
         }
         // Hack to get the seek position
-        let pos = self.reader.seek(SeekFrom::Current(0))?;
+        let pos = self.reader.stream_position()?;
         self.reader.rewind()?;
         return Ok(pos);
     }

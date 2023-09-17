@@ -3,9 +3,13 @@ use crate::OdinTarError;
 /// Odin-specific metadata appended to the archive contents.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Metadata {
+    /// Identifier for the firmware build contained within.
     pub build_id: u64,
+    /// Original size of files without compression or metadata trailer.
     pub orig_size: u64,
+    /// MD5 checksum of archive without metadata trailer.
     pub md5: String,
+    /// Filename used to identify contents before packing.
     pub orig_file_name: String,
 }
 
@@ -15,31 +19,29 @@ impl Metadata {
     pub fn from_file_trailer(data: &str) -> Result<Metadata, OdinTarError> {
         let mut build_id: Option<u64> = None;
         let mut orig_size: Option<u64> = None;
-        let md5: Option<String>;
-        let orig_file_name: Option<String>;
         for line in data.lines() {
             if line.contains("BUILD_ID") {
-                let id = line.rsplit_once(":").unwrap().1;
-                let id: u64 = u64::from_str_radix(id, 10)?;
+                let id = line.rsplit_once(':').unwrap().1;
+                let id: u64 = str::parse(id)?;
                 build_id = Some(id);
             } else if line.contains("original_tar_file_size") {
-                let size = line.rsplit_once(":").unwrap().1;
-                let size: u64 = u64::from_str_radix(size, 10)?;
+                let size = line.rsplit_once(':').unwrap().1;
+                let size: u64 = str::parse(size)?;
                 orig_size = Some(size);
             }
         }
         // This entry does not follow the key:value format of the rest, so assume it can only sanely ever be last
         // There's (sometimes?) a newline after the last entry, trim it so we don't confuse rsplit
-        let last_line = data.trim_end_matches('\n').rsplit_once("\n").unwrap().1;
+        let last_line = data.trim_end_matches('\n').rsplit_once('\n').unwrap().1;
         let (hash, name) = last_line.split_once("  ").unwrap();
-        md5 = Some(String::from(hash));
-        orig_file_name = Some(String::from(name));
+        let md5 = String::from(hash);
+        let orig_file_name = String::from(name);
 
         return Ok(Metadata {
             build_id: build_id.unwrap(),
             orig_size: orig_size.unwrap(),
-            md5: md5.unwrap(),
-            orig_file_name: orig_file_name.unwrap(),
+            md5,
+            orig_file_name,
         });
     }
 }
