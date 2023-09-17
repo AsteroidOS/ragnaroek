@@ -170,7 +170,7 @@ fn read_u64_and_advance(data: &[u8]) -> (u64, &[u8]) {
 fn read_string_and_advance(data: &[u8], max_len: usize) -> (String, &[u8]) {
     let data = &data[0..max_len];
     // C String constructor fails on seeing a NULL-byte; filter them out
-    let str_data: Vec<u8> = data.iter().take_while(|x| **x != 0).map(|x| *x).collect();
+    let str_data: Vec<u8> = data.iter().take_while(|x| **x != 0).copied().collect();
     let c_str = CString::new(str_data.clone()).unwrap();
     let c_str_len = c_str.clone().into_bytes_with_nul().len();
     if c_str_len > max_len {

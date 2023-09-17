@@ -136,9 +136,8 @@ pub fn end(
         }
     }
     log::trace!(target: "FLASH", "Flashed modem: {}, flashed device type: {}, flashed partition ID: {}", is_modem, device_type, partition_id);
-    let p: OdinCmdPacket;
-    if is_modem {
-        p = OdinCmdPacket::with_6_args(
+    let p: OdinCmdPacket = if is_modem {
+        OdinCmdPacket::with_6_args(
             OdinCmd::Flash,
             OdinInt::from(FLASH_CMD_SEQUENCE_END),
             OdinInt::from(is_modem),
@@ -146,9 +145,9 @@ pub fn end(
             OdinInt::from(0x00),
             OdinInt::from(device_type),
             OdinInt::from(is_last_sequence),
-        );
+        )
     } else {
-        p = OdinCmdPacket::with_7_args(
+        OdinCmdPacket::with_7_args(
             OdinCmd::Flash,
             OdinInt::from(FLASH_CMD_SEQUENCE_END),
             OdinInt::from(is_modem),
@@ -157,8 +156,8 @@ pub fn end(
             OdinInt::from(device_type),
             OdinInt::from(partition_id),
             OdinInt::from(is_last_sequence),
-        );
-    }
+        )
+    };
 
     log::trace!(target: "FLASH", "Sending end-of-transfer command");
     p.send(c)?;

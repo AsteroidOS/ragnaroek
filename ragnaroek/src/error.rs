@@ -29,58 +29,58 @@ pub type Result<T> = result::Result<T, Error>;
 #[derive(Debug, Clone)]
 pub enum TransferError {
     /// Transfer error was caused by an I/O issue.
-    IoError(Arc<io::Error>),
+    Io(Arc<io::Error>),
     /// Transfer error was caused by an Odin protocol violation.
-    DownloadProtocolError(DownloadProtocolError),
+    DownloadProtocol(DownloadProtocolError),
     /// Transfer error was caused by an upload mode protocol violation.
-    UploadProtocolError(UploadProtocolError),
+    UploadProtocol(UploadProtocolError),
     /// Transfer error was caused by a failing integer conversion. This is probably a bug in ragnaroek.
-    IntegerConversionError(TryFromIntError),
+    IntegerConversion(TryFromIntError),
     /// Transfer error was caused by a corrupt Odin TAR file.
-    OdinTarError(OdinTarError),
+    OdinTar(OdinTarError),
 }
 
 impl From<io::Error> for TransferError {
     fn from(e: io::Error) -> Self {
-        return TransferError::IoError(Arc::new(e));
+        return TransferError::Io(Arc::new(e));
     }
 }
 
 impl From<DownloadProtocolError> for TransferError {
     fn from(e: DownloadProtocolError) -> Self {
-        return TransferError::DownloadProtocolError(e);
+        return TransferError::DownloadProtocol(e);
     }
 }
 
 impl From<UploadProtocolError> for TransferError {
     fn from(e: UploadProtocolError) -> Self {
-        return TransferError::UploadProtocolError(e);
+        return TransferError::UploadProtocol(e);
     }
 }
 
 impl From<TryFromIntError> for TransferError {
     fn from(e: TryFromIntError) -> Self {
-        return TransferError::IntegerConversionError(e);
+        return TransferError::IntegerConversion(e);
     }
 }
 
 impl From<io::Error> for Error {
     fn from(e: io::Error) -> Self {
-        let e = TransferError::IoError(Arc::new(e));
+        let e = TransferError::Io(Arc::new(e));
         return Error::TransferError(e);
     }
 }
 
 impl From<DownloadProtocolError> for Error {
     fn from(e: DownloadProtocolError) -> Self {
-        let e = TransferError::DownloadProtocolError(e);
+        let e = TransferError::DownloadProtocol(e);
         return Error::TransferError(e);
     }
 }
 
 impl From<UploadProtocolError> for Error {
     fn from(e: UploadProtocolError) -> Self {
-        let e = TransferError::UploadProtocolError(e);
+        let e = TransferError::UploadProtocol(e);
         return Error::TransferError(e);
     }
 }
@@ -99,6 +99,6 @@ impl From<TransferError> for Error {
 
 impl From<TryFromIntError> for Error {
     fn from(e: TryFromIntError) -> Self {
-        return Error::from(TransferError::IntegerConversionError(e));
+        return Error::from(TransferError::IntegerConversion(e));
     }
 }

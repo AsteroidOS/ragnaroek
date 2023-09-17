@@ -123,26 +123,25 @@ fn set_total_size(
     // TODO: Unclear whether proto version 0 supports this, might need to be conditional
     // FIXME: Might always be 64-bit compatible, need to check sometime w/ very old device"w
     log::info!(target: "FLASH", "Telling target to expect {} bytes total", data.len());
-    let p: OdinCmdPacket;
-    if supports_64bit_size {
+    let p: OdinCmdPacket = if supports_64bit_size {
         log::trace!(target: "FLASH", "Target supports 64-bit file sizes, sending that");
-        p = OdinCmdPacket::with_u64_arg(
+        OdinCmdPacket::with_u64_arg(
             OdinCmd::SessionStart,
             OdinInt::from(SET_TOTAL_SIZE),
             data.len().try_into()?,
-        );
+        )
     } else {
         log::trace!(target: "FLASH", "Target only supports 32-bit file sizes");
         let len: u32 = data
             .len()
             .try_into()
             .expect("File too large for 32-bit transfer");
-        p = OdinCmdPacket::with_2_args(
+        OdinCmdPacket::with_2_args(
             OdinCmd::SessionStart,
             OdinInt::from(SET_TOTAL_SIZE),
             OdinInt::from(len),
-        );
-    }
+        )
+    };
     p.send(c)?;
 
     let resp = OdinCmdReply::read(c)?;

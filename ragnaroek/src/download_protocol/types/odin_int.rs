@@ -39,9 +39,9 @@ impl From<u32> for OdinInt {
     }
 }
 
-impl Into<u32> for OdinInt {
-    fn into(self) -> u32 {
-        return self.inner;
+impl From<OdinInt> for u32 {
+    fn from(val: OdinInt) -> Self {
+        return val.inner;
     }
 }
 

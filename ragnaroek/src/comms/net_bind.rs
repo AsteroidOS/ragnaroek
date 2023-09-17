@@ -45,7 +45,7 @@ impl Communicator for Connection {
     /// Sends the given data to the device.
     /// Blocks until all data could be sent or an error occurs.
     fn send(&mut self, data: &[u8]) -> IOResult<()> {
-        log::trace!(target: "NET", "Send: {}", format_data_buf(&data));
+        log::trace!(target: "NET", "Send: {}", format_data_buf(data));
         return self.s.write_all(data);
     }
 
@@ -58,10 +58,18 @@ impl Communicator for Connection {
         return Ok(buf);
     }
 
+    #[allow(clippy::read_zero_byte_vec)] // Handled, but clippy is too stupid to notice
     fn recv(&mut self) -> Result<Vec<u8>> {
         let mut buf = vec![];
-        self.s.read(&mut buf)?;
+        let bytes_read = self.s.read(&mut buf)?;
         log::trace!(target: "NET", "Recv nonblocking: {}", format_data_buf(&buf));
+        // Should probably never happen
+        if bytes_read == 0 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Read zero bytes",
+            ));
+        }
         return Ok(buf);
     }
 

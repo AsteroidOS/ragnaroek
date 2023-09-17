@@ -92,6 +92,7 @@ impl OdinCmdPacket {
         return p;
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn with_7_args(
         kind: OdinCmd,
         arg1: OdinInt,

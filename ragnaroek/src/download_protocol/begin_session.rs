@@ -18,7 +18,7 @@ const V2PLUS_MAX_SEQ_PARTS: u32 = 30;
 /// Timeout for a transfer for protocol version 1.
 const V1_TIMEOUT: Duration = Duration::from_secs(30);
 /// Maximum size of a single packet in a flashing sequence for protocol version >1.
-const V2PLUS_MAX_FILE_PART_SIZE: u32 = 1 * 1024 * 1024; // 1MiB
+const V2PLUS_MAX_FILE_PART_SIZE: u32 = 1024 * 1024; // 1MiB
 /// Timeout for a transfer for protocol version >1.
 const V2PLUS_TIMEOUT: Duration = Duration::from_secs(120);
 /// Highest protocol version we support.

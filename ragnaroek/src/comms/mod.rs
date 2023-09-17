@@ -34,10 +34,10 @@ fn format_data_buf(data: &[u8]) -> String {
     let mut s = String::from("[");
     // Cut trailing zeroes
     let mut vec: Vec<u8> = data
-        .into_iter()
+        .iter()
         .rev()
         .skip_while(|&x| *x == 0)
-        .map(|x| *x)
+        .copied()
         .collect();
     vec = vec.into_iter().rev().collect();
     let num_zeroes = data.len() - vec.len();

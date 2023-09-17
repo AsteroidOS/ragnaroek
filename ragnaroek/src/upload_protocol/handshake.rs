@@ -18,10 +18,10 @@ pub fn handshake(c: &mut Box<dyn Communicator>) -> Result<()> {
     super::send_packet(c, PREAMBLE)?;
 
     match c.recv_exact(ACKNOWLEDGMENT.len()) {
-        Err(e) => return Err(Error::TransferError(TransferError::IoError(Arc::new(e)))),
+        Err(e) => return Err(Error::TransferError(TransferError::Io(Arc::new(e)))),
         Ok(data) => {
             if data != ACKNOWLEDGMENT {
-                return Err(Error::TransferError(TransferError::UploadProtocolError(
+                return Err(Error::TransferError(TransferError::UploadProtocol(
                     UploadProtocolError::MissingAck,
                 )));
             }

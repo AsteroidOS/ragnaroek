@@ -37,9 +37,17 @@ impl Communicator for Connection {
         return Ok(buf);
     }
 
+    #[allow(clippy::read_zero_byte_vec)] // Handled, but clippy is too stupid to notice
     fn recv(&mut self) -> IOResult<Vec<u8>> {
         let mut buf = vec![];
-        self.s.read(&mut buf)?;
+        let bytes_read = self.s.read(&mut buf)?;
+        // Should probably never happen
+        if bytes_read == 0 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Read zero bytes",
+            ));
+        }
         log::trace!(target: "NET", "Recv nonblocking: {}", format_data_buf(&buf));
         return Ok(buf);
     }

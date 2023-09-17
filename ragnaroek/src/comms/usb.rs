@@ -25,14 +25,10 @@ impl Connection {
         // FIXME: Error handling
         // Find the device
         // TODO: Handle multi-device
-        let dev: Option<Device<GlobalContext>> = rusb::devices()
-            .unwrap()
-            .iter()
-            .filter(|dev| {
-                let desc = dev.device_descriptor().unwrap();
-                desc.vendor_id() == SAMSUNG_VID && VALID_PIDS.contains(&desc.product_id())
-            })
-            .next();
+        let dev: Option<Device<GlobalContext>> = rusb::devices().unwrap().iter().find(|dev| {
+            let desc = dev.device_descriptor().unwrap();
+            desc.vendor_id() == SAMSUNG_VID && VALID_PIDS.contains(&desc.product_id())
+        });
         let dev = dev.expect("Failed to find supported USB device!");
 
         let mut handle = dev.open().unwrap();
@@ -137,7 +133,7 @@ impl Communicator for Connection {
         {
             Ok(read) => buf.resize(read, 0),
             // Timeout is used as a hack to not block if there's no data to read
-            Err(rusb::Error::Timeout) => buf.resize(0, 0),
+            Err(rusb::Error::Timeout) => buf.clear(),
             // FIXME: Turn into an I/O error somehow
             Err(e) => panic!("{}", e),
         }
