@@ -1,6 +1,8 @@
 //! This crate implements deserialization/serialization (TODO)
 //! for the Samsung PIT partition file format.
 
+#![forbid(unsafe_code)]
+#![forbid(missing_docs)]
 #![allow(clippy::needless_return)]
 
 mod deserialize;
@@ -25,18 +27,23 @@ const PIT_MAGIC: [u8; 4] = [0x76, 0x98, 0x34, 0x12];
 const PIT_HEADER_SIZE: usize = 28;
 const PIT_ENTRY_SIZE: usize = 132;
 
+/// The top-level PIT type.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Pit(pub Either<PitV1, PitV2>);
 
 impl Pit {
+    /// Create from a version 1 PIT.
     pub(crate) fn from_v1(p: PitV1) -> Pit {
         return Pit(Either::Left(p));
     }
+
+    /// Create from a version 2 PIT.
     pub(crate) fn from_v2(p: PitV2) -> Pit {
         return Pit(Either::Right(p));
     }
 
+    /// Look up a PIT entry by it's name.
     pub fn get_entry_by_name(&self, name: &str) -> Option<Either<PitEntryV1, PitEntryV2>> {
         match &self.0 {
             Either::Left(s) => {
@@ -50,6 +57,7 @@ impl Pit {
         }
     }
 
+    /// Look up the PIT device's gang name.
     pub fn gang_name(&self) -> String {
         match &self.0 {
             Either::Left(s) => {
@@ -61,6 +69,7 @@ impl Pit {
         }
     }
 
+    /// Look up the PIT device's project name.
     pub fn project_name(&self) -> String {
         match &self.0 {
             Either::Left(s) => {
@@ -101,6 +110,7 @@ impl Iterator for PitV1 {
 }
 
 impl PitV1 {
+    /// Get a PIT entry by it's name.
     pub fn get_entry_by_name(&self, name: &str) -> Option<PitEntryV1> {
         return self.clone().find(|e| e.partition_name == name);
     }
@@ -134,7 +144,8 @@ impl Iterator for PitV2 {
 }
 
 impl PitV2 {
+    /// Get a PIT entry by it's name.
     pub fn get_entry_by_name(&self, name: &str) -> Option<PitEntryV2> {
-        return self.clone().into_iter().find(|e| e.partition_name == name);
+        return self.clone().find(|e| e.partition_name == name);
     }
 }
