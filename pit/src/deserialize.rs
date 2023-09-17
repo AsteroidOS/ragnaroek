@@ -12,34 +12,43 @@ const PIT_UPDATE_ATTRIBUTE_SECURE: u32 = 0x02;
 
 const PIT_STRING_MAX_LEN: usize = 32;
 
-fn is_pit_v2(data: &[u8]) -> bool {
+fn is_pit_v2(data: &[u8]) -> Result<bool, PitError> {
     // According to Samsung-Loki, the way to detect version is to check whether all block sizes are the same.
+    if data.len() < PIT_HEADER_SIZE {
+        return Err(PitError::NoBlockData);
+    }
     let data = &data[PIT_HEADER_SIZE..];
     let mut last_block_size: Option<u32> = None;
     for entry in data.chunks(PIT_ENTRY_SIZE) {
         // Compare block size to the last one we encountered
+        if entry.len() < 20 + 4 {
+            return Err(PitError::FieldTooShort(24, entry.len()));
+        }
         let block_size = u32::from_be_bytes([entry[20], entry[21], entry[22], entry[23]]);
         if Some(block_size) != last_block_size {
             if last_block_size.is_none() {
                 last_block_size = Some(block_size);
             }
             if last_block_size.unwrap() != block_size {
-                return true;
+                return Ok(true);
             }
             last_block_size = Some(block_size);
         }
     }
-    return false;
+    return Ok(false);
 }
 
 impl Pit {
     /// Obtain a PIT structure by parsing it's binary representation.
     pub fn deserialize(data: &[u8]) -> Result<Pit, PitError> {
         // Check whether magic is valid
+        if data.len() < PIT_MAGIC.len() {
+            return Err(PitError::MagicTooShort);
+        }
         if data[0..=3] != PIT_MAGIC {
             return Err(PitError::InvalidPit(data[0..=3].try_into().unwrap()));
         }
-        let is_v2 = is_pit_v2(data);
+        let is_v2 = is_pit_v2(data)?;
         let data = &data[4..];
 
         // Parse global data
@@ -94,6 +103,9 @@ fn read_u32_as_usize_and_advance(data: &[u8]) -> Result<(usize, &[u8]), PitError
 
 fn read_u32_and_advance(data: &[u8]) -> Result<(u32, &[u8]), PitError> {
     let mut int_raw: [u8; 4] = [0; 4];
+    if data.len() < 4 {
+        return Err(PitError::FieldTooShort(4, data.len()));
+    }
     for (i, b) in data[0..3].iter().enumerate() {
         int_raw[i] = *b;
     }
@@ -104,12 +116,18 @@ fn read_u32_and_advance(data: &[u8]) -> Result<(u32, &[u8]), PitError> {
 }
 
 fn read_string_and_advance(data: &[u8], max_len: usize) -> Result<String, PitError> {
+    if data.len() < max_len {
+        return Err(PitError::FieldTooShort(max_len, data.len()));
+    }
     let data = &data[0..max_len];
     // C String constructor fails on seeing a NULL-byte; filter them out
     let data: Vec<u8> = data.iter().take_while(|x| **x != 0).copied().collect();
-    let c_str = CString::new(data).unwrap();
-    let s = c_str.into_string().unwrap();
-    return Ok(s);
+    let c_str = CString::new(data.clone()).unwrap();
+    if let Ok(s) = c_str.into_string() {
+        return Ok(s);
+    } else {
+        return Err(PitError::InvalidUTF8(data));
+    }
 }
 
 fn read_pit_type_and_advance(data: &[u8]) -> Result<(PitType, &[u8]), PitError> {
