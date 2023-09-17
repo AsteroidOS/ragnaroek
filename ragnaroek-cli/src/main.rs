@@ -34,6 +34,7 @@ fn main() {
         Some(("parse-pit", sub_args)) => parse_pit(sub_args),
         Some(("save-pit", sub_args)) => save_pit(sub_args),
         Some(("flash", sub_args)) => flash(sub_args),
+        Some(("flash-odintar", sub_args)) => flash_odintar(sub_args),
         Some(("shell", sub_args)) => shell(sub_args),
         Some(("factory-reset", sub_args)) => factory_reset(sub_args),
         Some(("upload-mode", sub_args)) => upload_mode(sub_args),
@@ -124,6 +125,23 @@ fn define_cli() -> ArgMatches {
         .default_value("false")
         .help("Whether to flash to the microSD card instead of the device itself.")
     );
+    let flash_odintar = Command::new("flash-odintar").about("Flash the given multi-partition Odin archive (.tar.md5) to the device. Remember that flashing certain partitions incorrectly may brick your device!")
+    .arg(transport.clone())
+        .arg(reboot.clone())
+    .arg(Arg::new("filename")
+        .short('f')
+        .long("filename")
+        .required(true)
+        .num_args(1)
+        .help("The filename of the archive to flash. Required.")
+    )
+    .arg(Arg::new("t-flash")
+        .long("t-flash")
+        .required(false)
+        .value_parser(clap::value_parser!(bool))
+        .default_value("false")
+        .help("Whether to flash to the microSD card instead of the device itself.")
+    );
 
     let wait_for_device = Command::new("wait-for-device")
         .about(
@@ -192,6 +210,7 @@ fn define_cli() -> ArgMatches {
             parse_pit,
             save_pit,
             flash,
+            flash_odintar,
             shell,
             upload_mode,
             factory_reset,
@@ -368,6 +387,34 @@ fn flash(args: &ArgMatches) {
             .unwrap();
     }
 
+    let reboot = parse_reboot_option(args);
+    sess.end(reboot).unwrap();
+}
+
+fn flash_odintar(args: &ArgMatches) {
+    let comm: Box<dyn Communicator> = get_download_communicator(args).unwrap();
+    let mut sess = download_protocol::Session::begin(comm).unwrap();
+
+    let t_flash: bool = *args
+        .get_one::<bool>("t-flash")
+        .expect("Argument invalid! This is probably a clap bug.");
+    if t_flash {
+        sess.enable_tflash().unwrap();
+    }
+
+    // Find the PIT entry matching the partition to flash
+    let pit_data = sess.download_pit(sess.params).unwrap();
+    let pit = pit::Pit::deserialize(&pit_data).unwrap();
+
+    let path: &str = args
+        .get_one::<String>("filename")
+        .expect("Required argument not set! This is probably a clap bug.");
+    let path = Path::new(&path);
+    let mut f = File::open(path).unwrap();
+
+    // TODO: Progress bar
+    sess.flash_odintar(&mut f, pit, &mut None::<&mut fn(u64)>)
+        .unwrap();
     let reboot = parse_reboot_option(args);
     sess.end(reboot).unwrap();
 }

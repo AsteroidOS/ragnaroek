@@ -2152,6 +2152,7 @@ version = "0.1.0"
 dependencies = [
  "either",
  "log",
+ "odintar",
  "pit",
  "rusb",
 ]

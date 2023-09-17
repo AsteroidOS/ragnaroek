@@ -9,10 +9,11 @@ edition = "2021"
 default = ["usb"]
 
 # Whether to support USB targets or network targets only.
-usb = [ "rusb" ]
+usb = ["rusb"]
 
 [dependencies]
 either = { version = "1", default_features = false }
-log = { version = "0.4", default_features = false, features = [ "std" ] }
+log = { version = "0.4", default_features = false, features = ["std"] }
 rusb = { version = "0.9", features = ["vendored"], optional = true }
 pit = { path = "../pit", features = ["tabled", "serde"] }
+odintar = { path = "../odintar" }

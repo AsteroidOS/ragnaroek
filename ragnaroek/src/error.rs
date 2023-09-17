@@ -6,6 +6,7 @@ use std::io;
 use std::num::TryFromIntError;
 use std::sync::Arc;
 
+use odintar::OdinTarError;
 use pit::PitError;
 
 /// Raganroek's top-level error type.
@@ -34,7 +35,9 @@ pub enum TransferError {
     /// Transfer error was caused by an upload mode protocol violation.
     UploadProtocolError(UploadProtocolError),
     /// Transfer error was caused by a failing integer conversion. This is probably a bug in ragnaroek.
-    IntegeArconversionError(TryFromIntError),
+    IntegerConversionError(TryFromIntError),
+    /// Transfer error was caused by a corrupt Odin TAR file.
+    OdinTarError(OdinTarError),
 }
 
 impl From<io::Error> for TransferError {
@@ -57,7 +60,7 @@ impl From<UploadProtocolError> for TransferError {
 
 impl From<TryFromIntError> for TransferError {
     fn from(e: TryFromIntError) -> Self {
-        return TransferError::IntegeArconversionError(e);
+        return TransferError::IntegerConversionError(e);
     }
 }
 
@@ -96,6 +99,6 @@ impl From<TransferError> for Error {
 
 impl From<TryFromIntError> for Error {
     fn from(e: TryFromIntError) -> Self {
-        return Error::from(TransferError::IntegeArconversionError(e));
+        return Error::from(TransferError::IntegerConversionError(e));
     }
 }

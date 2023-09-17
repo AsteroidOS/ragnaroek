@@ -84,6 +84,22 @@ impl Session {
     ) -> Result<()> {
         return flash(&mut self.c, self.params, data, pit_entry, cb);
     }
+
+    /// The top-level flash function.
+    ///
+    /// It calls `flash()` for each component of the Odin TAR file.
+    ///
+    /// `cb` is a callback for e.g. displaying a progress bar.
+    pub fn flash_odintar(
+        &mut self,
+        rdr: &mut dyn SeekableReader,
+        pit: Pit,
+        // TODO: Make this filename-aware. For now, it's just called for each file in the archive.
+        cb: &mut Option<&mut impl FnMut(u64)>,
+    ) -> Result<()> {
+        return flash_odintar(&mut self.c, self.params, rdr, pit, cb);
+    }
+
     /// Factory reset user data on the target.
     pub fn factory_reset(&mut self) -> Result<()> {
         return factory_reset(&mut self.c);

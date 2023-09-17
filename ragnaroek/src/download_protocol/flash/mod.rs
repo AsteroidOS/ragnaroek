@@ -8,7 +8,9 @@ use crate::Communicator;
 use crate::Result;
 
 use either::Either;
-use pit::{PitEntryV1, PitEntryV2};
+use odintar::OdinTar;
+use pit::{Pit, PitEntryV1, PitEntryV2};
+use std::io::{Read, Seek};
 
 const FLASH_CMD_BEGIN_FLASH: u32 = 0x00;
 const SET_TOTAL_SIZE: u32 = 0x02;
@@ -62,6 +64,47 @@ pub(crate) fn flash(
         log::debug!(target: "FLASH", "[Sequence {}/{}] OK", i + 1, total_seqs);
     }
     log::info!(target: "FLASH", "Flash OK");
+
+    return Ok(());
+}
+
+pub trait SeekableReader: Read + Seek {}
+impl<T: Read + Seek> SeekableReader for T {}
+
+/// The top-level flash function.
+///
+/// It calls `flash()` for each component of the Odin TAR file.
+///
+/// `cb` is a callback for e.g. displaying a progress bar.
+pub(crate) fn flash_odintar(
+    c: &mut Box<dyn Communicator>,
+    sp: SessionParams,
+    rdr: &mut dyn SeekableReader,
+    pit: Pit,
+    // TODO: Make this filename-aware. For now, it's just called for each file in the archive.
+    cb: &mut Option<&mut impl FnMut(u64)>,
+) -> Result<()> {
+    log::info!(target: "FLASH", "Flashing ODIN archive");
+
+    let mut archive = OdinTar::from_reader(rdr);
+    archive.validate().unwrap();
+    let mut archive = archive.archive();
+    let total = archive.entries()?.count();
+
+    // Flash each file in the archive separately, with the basename being the PIT partition.
+    for (i, entry) in archive.entries()?.enumerate() {
+        let mut entry = entry?;
+        let p = entry.path().unwrap();
+        log::info!(target: "FLASH", "[File {}/{}] Flashing file {}", i + 1, total, p.display());
+        let name = p.file_stem().unwrap().to_str().unwrap();
+        let pit_entry = pit.get_entry_by_name(name).unwrap();
+        let mut buf: Vec<u8> = Vec::with_capacity(entry.size().try_into().unwrap());
+        entry.read_to_end(&mut buf)?;
+        flash(c, sp, &buf, pit_entry, cb)?;
+        log::info!(target: "FLASH", "[File {}/{}] OK", i + 1, total);
+    }
+
+    log::info!(target: "FLASH", "Archive flash OK");
 
     return Ok(());
 }

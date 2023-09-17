@@ -27,4 +27,6 @@ pub enum DownloadProtocolError {
     ///
     /// The arguments are the expected packet number and the actual packet number.
     UnexpectedFlashPacket(OdinInt, OdinInt),
+    /// The downloaded PIT file is invalid.
+    InvalidPitFile(pit::PitError),
 }

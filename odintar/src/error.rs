@@ -1,12 +1,13 @@
 use std::io;
 use std::num::{ParseIntError, TryFromIntError};
 use std::string::FromUtf8Error;
+use std::sync::Arc;
 
 /// Error returned when encountering an issue with a given Odin tar archive.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum OdinTarError {
     /// An error encountered when reading the underlying tar archive.
-    IoError(io::Error),
+    IoError(Arc<io::Error>),
     /// An error encountered when reading Odin's metadata in the archive.
     MetadataError,
     /// Checksum mismatch between Odin's metadata and the actual contents.
@@ -21,7 +22,7 @@ pub enum OdinTarError {
 
 impl From<io::Error> for OdinTarError {
     fn from(value: io::Error) -> Self {
-        return OdinTarError::IoError(value);
+        return OdinTarError::IoError(Arc::from(value));
     }
 }
 
