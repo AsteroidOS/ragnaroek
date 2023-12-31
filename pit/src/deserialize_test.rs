@@ -77,6 +77,7 @@ const PIT_PATH: &str = "./testdata/";
 #[test_case("SM-N910F_32GB.pit" ; "SM-N910F_32GB.pit")]
 #[test_case("SM-N910T_32GB.pit" ; "SM-N910T_32GB.pit")]
 #[test_case("SM-N910V.pit" ; "SM-N910V.pit")]
+#[test_case("SM-R381.pit" ; "SM-R381.pit")]
 #[test_case("SM-R732.pit" ; "SM-R732.pit")]
 #[test_case("SM-T210.pit" ; "SM-T210.pit")]
 #[test_case("SM-T210(R).pit" ; "SM-T210(R).pit")]
