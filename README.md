@@ -16,6 +16,8 @@ Some older devices (Galaxy S3, S5) have working flashing. Some newer devices (e.
 
 Testing of new devices is always appreciated! Just remember that bricking is always a possibility.
 
+**Attention:** Currently the GUI and flashing via USB instead of Wifi is not supported.
+
 ## Usage
 
 The CLI's arguments may change frequently, as it's under very active development. Therefore, they're not documented in this README. Instead, look at the tool's help output:
