@@ -12,8 +12,8 @@ default = ["usb"]
 usb = ["rusb"]
 
 [dependencies]
-either = { version = "1", default_features = false }
-log = { version = "0.4", default_features = false, features = ["std"] }
+either = { version = "1", default-features = false }
+log = { version = "0.4", default-features = false, features = ["std"] }
 rusb = { version = "0.9", features = ["vendored"], optional = true }
 pit = { path = "../pit", features = ["tabled", "serde"] }
 odintar = { path = "../odintar" }

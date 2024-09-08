@@ -9,10 +9,10 @@ edition = "2021"
 
 [dependencies]
 # Whether to derive table formatting for convenient human-readable printing of entries
-tabled = { version = "0.14", optional = true }
+tabled = { version = "0.15", optional = true }
 # Whether to derive serde (de-)serialization for data types
 serde = { version = "1", optional = true, features = ["derive"] }
-either = { version = "1", default_features = false, features = ["serde"] }
+either = { version = "1", default-features = false, features = ["serde"] }
 
 [dev-dependencies]
 test-case = "3"

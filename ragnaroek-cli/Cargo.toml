@@ -7,10 +7,10 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4" }
-either = { version = "1.6", default_features = false }
-env_logger = { version = "0.10", default_features = false, features = [ "color" ] }
+either = { version = "1.6", default-features = false }
+env_logger = { version = "0.10", default-features = false, features = [ "color" ] }
 pit = { path = "../pit", features = [ "tabled", "serde" ] }
 ragnaroek = { path = "../ragnaroek", features = [ "usb" ] }
 serde_json = "1"
 is-terminal = "0.4"
-indicatif = { version = "0.17", default_features = false }
+indicatif = { version = "0.17", default-features = false }
