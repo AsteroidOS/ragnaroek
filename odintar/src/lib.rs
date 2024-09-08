@@ -37,8 +37,7 @@ impl<R: Read + Seek> OdinTar<R> {
         let mut ctx = md5::Context::new();
 
         // Hash the file, 1MiB at a time.
-        let mut buf: Vec<u8> = vec![];
-        buf.resize(1024 * 1024, 0);
+        let mut buf: Vec<u8> = vec![0; 1024 * 1024];
         // Ignore the appended filename and hash.
         let data_to_discard_pos = self.hashed_offset()?;
         let mut read_total: u64 = 0;
@@ -76,8 +75,7 @@ impl<R: Read + Seek> OdinTar<R> {
         // Doing this on a reader is a pain, so we read the end of the file into a buffer.
         // NOTE: This assumes metadata no longer than 768 bytes.
         self.reader.seek(SeekFrom::End(-768))?;
-        let mut buf: Vec<u8> = vec![];
-        buf.resize(768, 0);
+        let mut buf: Vec<u8> = vec![0; 768];
         self.reader.read_exact(&mut buf)?;
         let reader_size = self.reader.seek(SeekFrom::End(0))?;
         self.reader.rewind()?;
