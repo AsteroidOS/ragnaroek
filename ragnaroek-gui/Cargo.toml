@@ -8,12 +8,16 @@ edition = "2021"
 [dependencies]
 pit = { path = "../pit", features = ["serde"] }
 ragnaroek = { path = "../ragnaroek", features = ["usb"] }
-rfd = { version = "0.12", default-features = false, features = ["xdg-portal"] }
-eframe = "0.22"
-egui_extras = { version = "0.22", default-features = false }
-egui_dock = "0.6"
-egui_logger = "0.3"
+rfd = { version = "0.14", default-features = false, features = [
+	"xdg-portal",
+	"async-std",
+] }
+eframe = "0.28"
+egui_extras = { version = "0.28", default-features = false }
+egui_dock = "0.13"
+egui_logger = "0.5"
 bus = "2.4.0"
-log = { version = "0.4", default_features = false, features = ["std"] }
+log = { version = "0.4", default-features = false, features = ["std"] }
 # Until https://github.com/rust-lang-nursery/lazy-static.rs/issues/201 is fixed
 lazy_static = { git = "https://github.com/rust-lang-nursery/lazy-static.rs", branch = "master" }
+env_logger = "0.11.5"
