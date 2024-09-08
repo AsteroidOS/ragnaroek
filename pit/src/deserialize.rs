@@ -67,8 +67,7 @@ impl Pit {
 
         // Parse each entry
         if is_v2 {
-            let mut entries: Vec<PitEntryV2> = Vec::new();
-            entries.reserve(num_entries);
+            let mut entries: Vec<PitEntryV2> = Vec::with_capacity(num_entries);
             for _ in 0..num_entries {
                 let (entry, _) = read_entry_v2(data)?;
                 entries.push(entry);
@@ -82,8 +81,7 @@ impl Pit {
                 idx: 0,
             }));
         } else {
-            let mut entries: Vec<PitEntryV1> = Vec::new();
-            entries.reserve(num_entries);
+            let mut entries: Vec<PitEntryV1> = Vec::with_capacity(num_entries);
             for _ in 0..num_entries {
                 let (entry, _) = read_entry_v1(data)?;
                 entries.push(entry);
