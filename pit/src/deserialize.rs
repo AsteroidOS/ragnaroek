@@ -12,6 +12,8 @@ const PIT_UPDATE_ATTRIBUTE_SECURE: u32 = 0x02;
 
 const PIT_STRING_MAX_LEN: usize = 32;
 
+const MAX_ENTRIES: usize = 256;
+
 fn is_pit_v2(data: &[u8]) -> Result<bool, PitError> {
     // According to Samsung-Loki, the way to detect version is to check whether all block sizes are the same.
     if data.len() < PIT_HEADER_SIZE {
@@ -53,6 +55,9 @@ impl Pit {
 
         // Parse global data
         let (num_entries, data) = read_u32_as_usize_and_advance(data)?;
+        if num_entries > MAX_ENTRIES {
+            return Err(PitError::TooManyEntries(num_entries));
+        }
         let gang_name = read_string_and_advance(data, 8)?;
         let data = &data[8..];
         let project_name = read_string_and_advance(data, 8)?;

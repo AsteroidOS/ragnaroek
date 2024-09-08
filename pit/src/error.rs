@@ -15,4 +15,6 @@ pub enum PitError {
     InvalidDeviceType(u32),
     /// PIT didn't contain any block data after the header.
     NoBlockData,
+    /// PIT contained an unreasonable number of entries.
+    TooManyEntries(usize),
 }
