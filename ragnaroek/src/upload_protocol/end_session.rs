@@ -1,7 +1,7 @@
 use crate::Communicator;
 use crate::Result;
 
-const POSTAMBLE: &[u8] = &[b'P', b'o', b'S', b't', b'A', b'm', b'B', b'l', b'E', b'\0'];
+const POSTAMBLE: &[u8] = b"PoStAmBlE\0";
 
 /// End a session with the target.
 /// Must be called before disconnecting from the device.

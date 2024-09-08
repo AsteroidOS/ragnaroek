@@ -29,8 +29,7 @@ impl Communicator for Connection {
     }
 
     fn recv_exact(&mut self, how_much: usize) -> IOResult<Vec<u8>> {
-        let mut buf = vec![];
-        buf.resize(how_much, 0);
+        let mut buf = vec![0; how_much];
         self.s.read_exact(&mut buf)?;
 
         log::trace!(target: "NET", "Recv: {}",format_data_buf(&buf));

@@ -122,8 +122,7 @@ impl OdinCmdPacket {
 
     /// Send the constructed packet in the proper format over the given `Communicator`.
     pub(crate) fn send(&self, comm: &mut Box<dyn Communicator>) -> Result<()> {
-        let mut buf: Vec<u8> = Vec::new();
-        buf.reserve(CMD_PACKET_LEN);
+        let mut buf: Vec<u8> = Vec::with_capacity(CMD_PACKET_LEN);
 
         let cmd_int: OdinInt = self.cmd.into();
         buf.extend_from_slice(&cmd_int.to_wire());

@@ -2,7 +2,7 @@ use super::send_packet;
 use super::Bitness;
 use crate::{Communicator, Result};
 
-const DATAXFER: &[u8] = &[b'D', b'a', b'T', b'a', b'X', b'f', b'E', b'r', b'\0'];
+const DATAXFER: &[u8] = b"DaTaXfEr\0";
 const TRANSFER_MAX_SIZE: usize = 0x80000; // 512KiB
 
 /// Dump target memory in upload mode.

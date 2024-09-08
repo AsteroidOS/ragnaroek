@@ -7,7 +7,7 @@ use either::*;
 
 const DEVICE_NAME_LEN: usize = 16;
 const PARTITION_NAME_LEN: usize = 12;
-const PROBE: &[u8] = &[b'P', b'r', b'O', b'b', b'E', b'\0'];
+const PROBE: &[u8] = b"PrObE\0";
 
 /// Data structure holding information the target returns about itself.
 #[derive(Debug, Clone)]
@@ -49,7 +49,6 @@ impl ProbeTable {
         let (device_name, data) = read_string_and_advance(data, DEVICE_NAME_LEN);
 
         // Keep reading an unknown amount of entries
-        let data = data;
         let entries = match bitness {
             Bitness::ThirtyTwo => {
                 let (entries_32, _) = read_probe_entries_32_and_advance(data);

@@ -7,10 +7,8 @@ use crate::Result;
 
 use super::UploadProtocolError;
 
-const PREAMBLE: &[u8] = &[b'P', b'r', b'E', b'a', b'M', b'b', b'L', b'e', b'\0'];
-const ACKNOWLEDGMENT: &[u8] = &[
-    b'A', b'c', b'K', b'n', b'O', b'w', b'L', b'e', b'D', b'g', b'M', b'e', b'N', b't', b'\0',
-];
+const PREAMBLE: &[u8] = b"PrEaMbLe\0";
+const ACKNOWLEDGMENT: &[u8] = b"AcKnOwLeDgMeNt\0";
 
 /// Handshake with the target.
 /// This must be called before performing any other upload mode operations.

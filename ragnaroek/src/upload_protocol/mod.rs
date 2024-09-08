@@ -30,8 +30,7 @@ pub enum Bitness {
 /// Sends the given packet to the target.
 /// Adds padding if needed.
 fn send_packet(c: &mut Box<dyn Communicator>, data: &[u8]) -> Result<()> {
-    let mut padded: Vec<u8> = Vec::new();
-    padded.resize(PACKET_LEN, 0);
+    let mut padded: Vec<u8> = vec![0; PACKET_LEN];
     for (i, byte) in data.iter().enumerate() {
         padded[i] = *byte;
     }

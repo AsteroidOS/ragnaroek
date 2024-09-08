@@ -20,8 +20,7 @@ pub(crate) fn download_pit(c: &mut Box<dyn Communicator>, p: SessionParams) -> R
     let total_len: usize = total_len
         .try_into()
         .expect("Not trying to run this on a 16-bit platform, are you?");
-    let mut data: Vec<u8> = Vec::new();
-    data.reserve(total_len);
+    let mut data: Vec<u8> = Vec::with_capacity(total_len);
 
     let mut chunk_idx: usize = 0;
     while data.len() < total_len {

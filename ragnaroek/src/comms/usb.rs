@@ -108,8 +108,7 @@ impl Communicator for Connection {
     }
 
     fn recv_exact(&mut self, how_much: usize) -> IOResult<Vec<u8>> {
-        let mut buf = vec![];
-        buf.resize(how_much, 0);
+        let mut buf = vec![0; how_much];
         match self
             .handle
             .read_bulk(self.recv_endpoint, &mut buf, self.timeout)
@@ -124,9 +123,8 @@ impl Communicator for Connection {
     }
 
     fn recv(&mut self) -> IOResult<Vec<u8>> {
-        let mut buf = vec![];
         // TODO: Figure out max size properly
-        buf.resize(1024 * 1024, 0);
+        let mut buf = vec![0; 1024 * 1024];
         match self
             .handle
             .read_bulk(self.recv_endpoint, &mut buf, Duration::from_millis(1))
